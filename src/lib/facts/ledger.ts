@@ -19,7 +19,7 @@ export interface Ledger {
   forTarget(target: string): FactView[];
 }
 
-const CONTROL_KINDS = new Set(["retract", "resolve", "answer"]);
+const CONTROL_KINDS = new Set(["retract", "resolve", "answer", "seen"]);
 
 export function buildLedger(rows: Fact[], actors: Actor[]): Ledger {
   const actorById = new Map(actors.map((a) => [a.id, a]));
@@ -74,6 +74,7 @@ export function buildLedger(rows: Fact[], actors: Actor[]): Ledger {
       }
       if (f.kind === "question" && f.answers.filter((a) => !a.retracted).length === 0) s.openQuestions += 1;
       if (f.kind === "attachment") s.attachments += 1;
+      if (f.kind === "adjustment") s.adjustments += 1;
     }
     summaries.set(target, s);
     return s;

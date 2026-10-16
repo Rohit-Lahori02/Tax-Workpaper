@@ -12,6 +12,8 @@ import { factsContext } from "@/lib/facts/context";
 import { getLedger } from "@/lib/facts/repo";
 import { describeRef } from "@/lib/packet/describe";
 import { getPacket } from "@/lib/packet/load";
+import { canAdjust } from "@/lib/permissions";
+import { lineHref, parseRef } from "@/lib/refs";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -30,6 +32,14 @@ export default async function FindingPage({ params }: Props) {
   const result = run.results.find((r) => r.check === f.check)!;
   const [{ ledger }, ctx] = await Promise.all([getLedger(), factsContext()]);
   const target = "check:" + f.id;
+
+  // A finding with one expected number on one numeric line can be turned into an adjustment in a click.
+  const expectedNumber = f.expected && /^-?[\d,]+(\.\d+)?$/.test(f.expected) ? f.expected.replace(/,/g, "") : null;
+  const lineRef = f.refs.map(parseRef).find((r) => r.kind === "line" && typeof index.lines.get(index.latestVersion)?.get(r.key)?.value === "number");
+  const proposeHref =
+    expectedNumber && lineRef && lineRef.kind === "line" && canAdjust(ctx.actor)
+      ? lineHref(lineRef.key) + "?adjust=" + encodeURIComponent(expectedNumber) + "&reason=" + encodeURIComponent(f.title + ". " + f.detail.slice(0, 300)) + "&from=" + encodeURIComponent(target)
+      : null;
 
   return (
     <>
@@ -57,6 +67,13 @@ export default async function FindingPage({ params }: Props) {
             <EffectBadge effect={f.effect} />
             <span className="font-mono text-[11px] text-muted">{target}</span>
           </>
+        }
+        actions={
+          proposeHref ? (
+            <Link href={proposeHref} className="pill primary">
+              Propose adjustment to {lineRef && lineRef.kind === "line" ? lineRef.key : ""}
+            </Link>
+          ) : null
         }
       />
       <div className="grid gap-4 xl:grid-cols-3">

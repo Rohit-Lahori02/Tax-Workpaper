@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
 import { runChecks } from "@/lib/checks/run";
+import { factsSince, lastSeenSeq } from "@/lib/effective";
 import { getLedger } from "@/lib/facts/repo";
 import { fmtDate } from "@/lib/format";
 import { getPacket } from "@/lib/packet/load";
@@ -33,6 +34,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const openQuestions = ledger.questions.filter(
     (q) => !q.retracted && q.answers.every((a) => a.retracted) && (actor.kind === "staff" || q.body.to === "client"),
   ).length;
+  const unseen = factsSince(ledger, lastSeenSeq(ledger, actor.id), actor.id).length;
 
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
@@ -46,6 +48,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             showLedger={canSeeLedger(actor)}
             openQuestions={openQuestions}
             checkErrors={runChecks(packet, index).counts.error}
+            unseen={unseen}
             client={{
               name: packet.packet.name.replace(/ - tax year \d{4}$/, ""),
               clientId: packet.packet.client_id,
@@ -57,7 +60,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             }}
           />
           <div className="flex min-w-0 flex-1 flex-col">
-            <Topbar actors={actors} actor={actor} revealEligible={canReveal(actor)} revealOn={reveal} />
+            <Topbar actors={actors} actor={actor} revealEligible={canReveal(actor)} revealOn={reveal} unseen={unseen} />
             {ledgerError ? (
               <div className="flex items-center gap-2 border-b border-warn/30 bg-warn-soft px-6 py-2 text-[12.5px] text-warn lg:px-8">
                 <AlertTriangle className="h-3.5 w-3.5" /> {ledgerError}

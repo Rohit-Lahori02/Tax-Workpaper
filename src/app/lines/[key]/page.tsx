@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AdjustmentForm } from "@/components/adjust/adjustment-form";
 import { Marks } from "@/components/facts/fact-marks";
 import { FactsPanel } from "@/components/facts/facts-panel";
 import { BuildTree } from "@/components/lines/build-tree";
+import { categoryFor, effectiveReturn, partnerThreshold } from "@/lib/effective";
+import { canAdjust } from "@/lib/permissions";
 import { PageHeader } from "@/components/page-header";
 import { RefLink } from "@/components/ref-link";
 import { VersionSwitch } from "@/components/return/version-switch";
@@ -17,7 +20,7 @@ import type { ExtractedValue, PacketDocument } from "@/lib/packet/schema";
 import { documentHref, lineHref, parseRef } from "@/lib/refs";
 import { variance } from "@/lib/variance";
 
-type Props = { params: Promise<{ key: string }>; searchParams: Promise<{ v?: string }> };
+type Props = { params: Promise<{ key: string }>; searchParams: Promise<{ v?: string; adjust?: string; reason?: string; from?: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { key } = await params;
@@ -26,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function LinePage({ params, searchParams }: Props) {
   const { key: rawKey } = await params;
-  const { v } = await searchParams;
+  const { v, adjust, reason, from } = await searchParams;
   const key = decodeURIComponent(rawKey);
   const { packet, index } = getPacket();
 
@@ -40,6 +43,9 @@ export default async function LinePage({ params, searchParams }: Props) {
   const dependents = version ? (index.dependents.get(version)?.get(key) ?? []) : [];
   const lineMap = version ? index.lines.get(version) : undefined;
   const summary = ledger.summary(key);
+  const eff = effectiveReturn(packet, index, ledger);
+  const w = version === index.latestVersion ? eff.lines.get(key) : undefined;
+  const workingValue = w && w.kind !== "blocked" && typeof w.working === "number" ? w.working : typeof line?.value === "number" ? line.value : null;
 
   // Sources grouped by document.
   const byDoc = new Map<string, { document: PacketDocument | null; values: ExtractedValue[] }>();
@@ -96,7 +102,24 @@ export default async function LinePage({ params, searchParams }: Props) {
         meta={
           line ? (
             <>
-              <span className="text-[26px] font-semibold leading-none tabular-nums tracking-tight">{fmtLineValue(line.value)}</span>
+              {w && w.kind !== "blocked" ? (
+                <span className="flex items-baseline gap-2">
+                  <span className="text-[26px] font-semibold leading-none tabular-nums tracking-tight">{fmtLineValue(w.working)}</span>
+                  <span className="text-[13px] text-muted">
+                    working · engine <span className="line-through">{fmtLineValue(line.value)}</span>
+                  </span>
+                  <Badge tone={w.kind === "adjusted" ? "accent" : "neutral"} dot>
+                    {w.kind}
+                  </Badge>
+                </span>
+              ) : (
+                <span className="text-[26px] font-semibold leading-none tabular-nums tracking-tight">{fmtLineValue(line.value)}</span>
+              )}
+              {w && w.kind === "blocked" ? (
+                <Badge tone="warn" dot>
+                  inputs changed; needs engine rerun
+                </Badge>
+              ) : null}
               <Badge tone="accent" mono>
                 {line.rule}
               </Badge>
@@ -186,6 +209,17 @@ export default async function LinePage({ params, searchParams }: Props) {
         </div>
 
         <div className="grid content-start gap-4">
+          {line && typeof line.value === "number" && version === index.latestVersion && canAdjust(ctx.actor) ? (
+            <AdjustmentForm
+              target={key}
+              engineValue={line.value}
+              workingValue={workingValue ?? line.value}
+              defaultCategory={categoryFor(key, line)}
+              rates={index.versions.get(version)!.tax_effect_rates}
+              partnerThreshold={partnerThreshold(packet)}
+              prefill={adjust || reason ? { newValue: adjust, reason, fromFinding: from } : undefined}
+            />
+          ) : null}
           <FactsPanel
             target={key}
             facts={ledger.forTarget(key)}

@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { cn } from "@/components/ui";
 
+export interface VersionOption {
+  id: string;
+  label?: string;
+  hint?: string;
+}
+
 /** Segmented control that keeps the current path and swaps the version query. */
 export function VersionSwitch({
   versions,
@@ -8,25 +14,24 @@ export function VersionSwitch({
   latest,
   href,
 }: {
-  versions: string[];
+  versions: (string | VersionOption)[];
   current: string;
   latest: string;
   href: (version: string) => string;
 }) {
+  const options: VersionOption[] = versions.map((v) => (typeof v === "string" ? { id: v } : v));
   return (
-    <div className="inline-flex rounded-md border border-border bg-surface p-0.5 text-[12px]">
-      {versions.map((v) => (
+    <div className="inline-flex rounded-full border border-border bg-surface p-0.5 text-[12px]">
+      {options.map((v) => (
         <Link
-          key={v}
-          href={href(v)}
-          className={cn(
-            "rounded px-2.5 py-1 font-medium",
-            v === current ? "bg-accent text-accent-fg" : "text-muted hover:text-foreground",
-          )}
-          aria-current={v === current ? "page" : undefined}
+          key={v.id}
+          href={href(v.id)}
+          className={cn("rounded-full px-2.5 py-1 font-medium", v.id === current ? "bg-accent text-accent-fg" : "text-muted hover:text-foreground")}
+          aria-current={v.id === current ? "page" : undefined}
+          title={v.hint}
         >
-          {v}
-          {v === latest ? <span className="ml-1 opacity-70">current</span> : null}
+          {v.label ?? v.id}
+          {v.id === latest ? <span className="ml-1 opacity-70">current</span> : null}
         </Link>
       ))}
     </div>

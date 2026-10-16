@@ -33,7 +33,7 @@ export function FormNav({ forms, active, version }: { forms: FormEntry[]; active
             {g.items.map((f) => (
               <li key={f.form}>
                 <Link
-                  href={"/return/" + encodeURIComponent(f.form) + "?v=" + version}
+                  href={"/return/" + encodeURIComponent(f.form) + "?v=" + encodeURIComponent(version)}
                   title={formLabel(f.form)}
                   className={cn(
                     "flex h-7 items-center justify-between gap-2 rounded-md px-2 text-[12.5px]",

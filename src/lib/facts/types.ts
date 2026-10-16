@@ -10,6 +10,8 @@ export const FACT_KINDS = [
   "retract",
   "resolve",
   "sensitive_view",
+  "adjustment",
+  "seen",
 ] as const;
 export type FactKind = (typeof FACT_KINDS)[number];
 
@@ -22,6 +24,8 @@ export const KIND_LABELS: Record<FactKind, string> = {
   retract: "Retracted",
   resolve: "Resolved",
   sensitive_view: "Viewed sensitive data",
+  adjustment: "Adjusted",
+  seen: "Caught up",
 };
 
 const text = z.string().trim().min(1, "Say something").max(4000, "Keep it under 4,000 characters");
@@ -63,6 +67,21 @@ export const ResolveBody = z.object({
 export const SensitiveViewBody = z.object({
   fields: z.array(z.string()),
 });
+export const AdjustmentBody = z.object({
+  engineValue: z.number(),
+  newValue: z.number(),
+  delta: z.number(),
+  reason: text,
+  authority: z.string().trim().max(400).optional(),
+  category: z.string().min(1),
+  effect: z.object({ federal: z.number(), california: z.number(), affectsTax: z.boolean() }),
+  requiresPartner: z.boolean(),
+  basedOn: z.string().min(1),
+  fromFinding: z.string().optional(),
+  whatIf: z.string().optional(),
+});
+export const SeenBody = z.object({ seq: z.number().int().nonnegative() });
+export type AdjustmentBody = z.infer<typeof AdjustmentBody>;
 
 export type VerificationBody = z.infer<typeof VerificationBody>;
 export type NoteBody = z.infer<typeof NoteBody>;
@@ -99,6 +118,7 @@ export interface TargetSummary {
   blockingOpen: number;
   openQuestions: number;
   attachments: number;
+  adjustments: number;
   /** Any non-control fact at all, retracted ones excluded. */
   total: number;
 }
@@ -109,5 +129,6 @@ export const EMPTY_SUMMARY: TargetSummary = {
   blockingOpen: 0,
   openQuestions: 0,
   attachments: 0,
+  adjustments: 0,
   total: 0,
 };

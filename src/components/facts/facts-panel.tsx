@@ -1,6 +1,8 @@
 "use client";
 
-import { CheckCircle2, MessageCircleQuestion, OctagonAlert, Paperclip, StickyNote, Undo2 } from "lucide-react";
+import { CheckCircle2, MessageCircleQuestion, OctagonAlert, Paperclip, PencilLine, StickyNote, Undo2 } from "lucide-react";
+import Link from "next/link";
+import { hrefFor } from "@/lib/refs";
 import { useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { humanize } from "@/components/facts/fact-marks";
 import { Badge, cn, Empty } from "@/components/ui";
@@ -211,6 +213,32 @@ function FactItem({ f, actor, staff }: { f: FactView; actor: ActorLite; staff: S
                 ) : null}
               </div>
             ) : null}
+            {f.kind === "adjustment" ? (
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge tone="accent">
+                    <PencilLine className="h-3 w-3" /> adjusted
+                  </Badge>
+                  <span className="font-mono text-[12px] tabular-nums">
+                    <span className="text-muted line-through">{numFmt(f.body.engineValue)}</span> → <span className="font-semibold">{numFmt(f.body.newValue)}</span>{" "}
+                    <span className="text-muted">({signed(f.body.delta)})</span>
+                  </span>
+                  <EffectText effect={f.body.effect} />
+                  {f.body.requiresPartner === true ? <Badge tone="warn">needs partner sign-off</Badge> : null}
+                </div>
+                <p className="mt-1 whitespace-pre-wrap">{String(f.body.reason ?? "")}</p>
+                <div className="mt-0.5 flex flex-wrap gap-x-3 text-[12px] text-muted">
+                  {typeof f.body.authority === "string" && f.body.authority ? <span>Authority: {f.body.authority}</span> : null}
+                  {typeof f.body.fromFinding === "string" ? (
+                    <Link href={hrefFor(f.body.fromFinding)} className="text-accent hover:underline">
+                      from check finding
+                    </Link>
+                  ) : null}
+                  {typeof f.body.whatIf === "string" ? <span>what-if {f.body.whatIf}</span> : null}
+                  <span>based on {String(f.body.basedOn ?? "")}</span>
+                </div>
+              </div>
+            ) : null}
             {f.kind === "attachment" ? (
               <div className="flex flex-wrap items-center gap-2">
                 <a
@@ -368,6 +396,23 @@ function AttachForm({ target }: { target: string }) {
         {error ? <span className="text-[12px] text-danger">{error}</span> : null}
       </div>
     </form>
+  );
+}
+
+const numFmt = (v: unknown) => (typeof v === "number" ? new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(v) : String(v ?? ""));
+const signed = (v: unknown) => (typeof v === "number" ? (v > 0 ? "+" : "") + numFmt(v) : "");
+
+function EffectText({ effect }: { effect: unknown }) {
+  if (!effect || typeof effect !== "object") return null;
+  const e = effect as { federal?: number; california?: number };
+  const fed = e.federal ?? 0;
+  const ca = e.california ?? 0;
+  if (!fed && !ca) return null;
+  const part = (n: number, label: string) => (n ? (n > 0 ? "+" : "−") + numFmt(Math.abs(n)) + " " + label : null);
+  return (
+    <Badge tone={fed + ca > 0 ? "warn" : "ok"} title="Estimated change in balance due if this stands">
+      {[part(fed, "fed"), part(ca, "CA")].filter(Boolean).join(" · ")}
+    </Badge>
   );
 }
 

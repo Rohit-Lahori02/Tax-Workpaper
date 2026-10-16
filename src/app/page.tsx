@@ -8,6 +8,7 @@ import { filingStatusLabel, fmtBalance, fmtDate, fmtDateTime, fmtMoney, fmtNumbe
 import { maskPin, maskSsn } from "@/lib/mask";
 import { EffectBadge } from "@/components/checks/finding-row";
 import { runChecks } from "@/lib/checks/run";
+import { effectiveReturn } from "@/lib/effective";
 import { getLedger } from "@/lib/facts/repo";
 import { KIND_LABELS, type FactKind } from "@/lib/facts/types";
 import { documentRows } from "@/lib/packet/documents";
@@ -42,6 +43,9 @@ export default async function OverviewPage() {
   const latest = index.versions.get(index.latestVersion)!;
   const prevId = index.versionOrder[index.versionOrder.length - 2];
   const prev = prevId ? index.versions.get(prevId) : undefined;
+  const eff = effectiveReturn(packet, index, ledger);
+  const hasWorking = eff.adjustments.length > 0;
+  const ws = eff.workingSummary;
   const series = (pick: (v: typeof latest) => number) => index.versionOrder.map((id) => pick(index.versions.get(id)!));
 
   const docs = documentRows(index, index.latestVersion);
@@ -92,30 +96,30 @@ export default async function OverviewPage() {
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Stat
-          label="Federal total tax"
-          value={fmtMoney(latest.summary.federal.total_tax)}
-          delta={delta(latest.summary.federal.total_tax, prev?.summary.federal.total_tax, prevId ?? "")}
-          chart={<Sparkline values={series((v) => v.summary.federal.total_tax)} className="text-accent" />}
+          label={hasWorking ? "Federal total tax · working" : "Federal total tax"}
+          value={fmtMoney(hasWorking ? ws.federal.total_tax : latest.summary.federal.total_tax)}
+          delta={hasWorking ? delta(ws.federal.total_tax, latest.summary.federal.total_tax, latest.version + " engine") : delta(latest.summary.federal.total_tax, prev?.summary.federal.total_tax, prevId ?? "")}
+          chart={<Sparkline values={[...series((v) => v.summary.federal.total_tax), ...(hasWorking ? [ws.federal.total_tax] : [])]} className="text-accent" />}
         />
         <Stat
-          label="Federal balance due"
-          value={fmtBalance(latest.summary.federal.balance_due)}
-          delta={delta(latest.summary.federal.balance_due, prev?.summary.federal.balance_due, prevId ?? "")}
+          label={hasWorking ? "Federal balance due · working" : "Federal balance due"}
+          value={fmtBalance(hasWorking ? ws.federal.balance_due : latest.summary.federal.balance_due)}
+          delta={hasWorking ? delta(ws.federal.balance_due, latest.summary.federal.balance_due, latest.version + " engine") : delta(latest.summary.federal.balance_due, prev?.summary.federal.balance_due, prevId ?? "")}
           hint={latest.summary.federal.penalty ? "incl. " + fmtMoney(latest.summary.federal.penalty) + " penalty" : undefined}
-          chart={<Sparkline values={series((v) => v.summary.federal.balance_due)} className="text-accent" />}
+          chart={<Sparkline values={[...series((v) => v.summary.federal.balance_due), ...(hasWorking ? [ws.federal.balance_due] : [])]} className="text-accent" />}
         />
         <Stat
-          label="California total tax"
-          value={fmtMoney(latest.summary.california.total_tax)}
-          delta={delta(latest.summary.california.total_tax, prev?.summary.california.total_tax, prevId ?? "")}
-          chart={<Sparkline values={series((v) => v.summary.california.total_tax)} className="text-accent" />}
+          label={hasWorking ? "California total tax · working" : "California total tax"}
+          value={fmtMoney(hasWorking ? ws.california.total_tax : latest.summary.california.total_tax)}
+          delta={hasWorking ? delta(ws.california.total_tax, latest.summary.california.total_tax, latest.version + " engine") : delta(latest.summary.california.total_tax, prev?.summary.california.total_tax, prevId ?? "")}
+          chart={<Sparkline values={[...series((v) => v.summary.california.total_tax), ...(hasWorking ? [ws.california.total_tax] : [])]} className="text-accent" />}
         />
         <Stat
-          label="California balance"
-          value={fmtBalance(latest.summary.california.balance_due)}
-          delta={delta(latest.summary.california.balance_due, prev?.summary.california.balance_due, prevId ?? "")}
-          tone={latest.summary.california.balance_due < 0 ? "ok" : undefined}
-          chart={<Sparkline values={series((v) => -v.summary.california.balance_due)} className="text-ok" />}
+          label={hasWorking ? "California balance · working" : "California balance"}
+          value={fmtBalance(hasWorking ? ws.california.balance_due : latest.summary.california.balance_due)}
+          delta={hasWorking ? delta(ws.california.balance_due, latest.summary.california.balance_due, latest.version + " engine") : delta(latest.summary.california.balance_due, prev?.summary.california.balance_due, prevId ?? "")}
+          tone={(hasWorking ? ws.california.balance_due : latest.summary.california.balance_due) < 0 ? "ok" : undefined}
+          chart={<Sparkline values={[...series((v) => -v.summary.california.balance_due), ...(hasWorking ? [-ws.california.balance_due] : [])]} className="text-ok" />}
         />
       </div>
 
@@ -240,6 +244,41 @@ export default async function OverviewPage() {
               ]}
             />
           </div>
+        </Card>
+
+        <Card
+          title="Working adjustments"
+          description={hasWorking ? eff.adjustments.length + " change" + (eff.adjustments.length === 1 ? "" : "s") + " applied on top of " + latest.version + "; " + eff.changed.length + " lines differ." : "Corrections recorded on top of the engine's figures. None yet."}
+          aside={
+            <Link href={"/compare?a=" + latest.version + "&b=working"} className="text-accent hover:underline">
+              Compare
+            </Link>
+          }
+        >
+          {hasWorking ? (
+            <ul className="grid gap-2.5">
+              {eff.adjustments
+                .slice(-6)
+                .reverse()
+                .map((a) => (
+                  <li key={a.factId} className="text-[13px]">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <RefLink refId={a.key} />
+                      <span className="font-mono text-[12px] tabular-nums">
+                        <span className="text-muted line-through">{fmtNumber(a.engineValue)}</span> → {fmtNumber(a.newValue)}
+                      </span>
+                      <EffectBadge effect={{ federal: a.effect.federal, california: a.effect.california }} />
+                      {a.requiresPartner ? <Badge tone="warn">partner</Badge> : null}
+                    </div>
+                    <div className="mt-0.5 line-clamp-1 text-[12px] text-muted">
+                      {a.actorName}: {a.reason}
+                    </div>
+                  </li>
+                ))}
+            </ul>
+          ) : (
+            <Empty>Open a line, or a check finding, to record a correction.</Empty>
+          )}
         </Card>
 
         <Card

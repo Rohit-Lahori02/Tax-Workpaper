@@ -23,3 +23,6 @@ export const canRetract = (a: ActorLite, authorId: string) => a.id === authorId 
 export const canResolve = (a: ActorLite, authorId: string) => a.kind === "staff" && (a.id === authorId || REVIEW_ROLES.has(a.role));
 export const canReveal = (a: Actor) => canViewSensitive(a);
 export const canSeeLedger = (a: ActorLite) => a.kind === "staff";
+/** Changing a number on the return is preparer-and-above work; the client never does it. */
+export const canAdjust = (a: ActorLite) => a.kind === "staff" && PREP_ROLES.has(a.role);
+export const canUndoBatch = (a: ActorLite, authorIds: string[]) => a.role === "partner" || authorIds.every((id) => id === a.id);

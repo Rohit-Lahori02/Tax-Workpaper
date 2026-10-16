@@ -1,45 +1,67 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f6f7;
+  --bg: #f5f6f8;
   --surface: #ffffff;
-  --foreground: #18181b;
-  --muted: #6b7280;
-  --border: #e4e4e7;
-  --accent: #1d4ed8;
-  --accent-soft: #dbeafe;
-  --warn: #b45309;
-  --warn-soft: #fef3c7;
-  --ok: #15803d;
+  --surface-2: #f1f3f6;
+  --fg: #0f172a;
+  --muted: #64748b;
+  --border: #e3e7ee;
+  --border-strong: #c9d2df;
+  --accent: #2457d6;
+  --accent-fg: #ffffff;
+  --accent-soft: #e8eefc;
+  --ok: #0f7b4f;
+  --ok-soft: #e6f5ee;
+  --warn: #a15c07;
+  --warn-soft: #fdf3dc;
+  --danger: #b42318;
+  --danger-soft: #fdecea;
+  --ring: rgba(36, 87, 214, 0.35);
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.05);
 }
 
 @theme inline {
-  --color-background: var(--background);
+  --color-background: var(--bg);
   --color-surface: var(--surface);
-  --color-foreground: var(--foreground);
+  --color-surface-2: var(--surface-2);
+  --color-foreground: var(--fg);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
   --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
-  --color-ok: var(--ok);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #09090b;
-    --surface: #18181b;
-    --foreground: #fafafa;
-    --muted: #a1a1aa;
-    --border: #27272a;
-    --accent: #60a5fa;
-    --accent-soft: #1e3a8a;
-    --warn: #fbbf24;
-    --warn-soft: #451a03;
-    --ok: #4ade80;
+    --bg: #0b0f17;
+    --surface: #121826;
+    --surface-2: #182033;
+    --fg: #e6eaf2;
+    --muted: #8b95a7;
+    --border: #223049;
+    --border-strong: #2e3d5a;
+    --accent: #6b9cff;
+    --accent-fg: #0b0f17;
+    --accent-soft: #1a2a4d;
+    --ok: #3ccf91;
+    --ok-soft: #10301f;
+    --warn: #f2b84b;
+    --warn-soft: #3a2a0a;
+    --danger: #ff7b6e;
+    --danger-soft: #3b1512;
+    --ring: rgba(107, 156, 255, 0.4);
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
   }
 }
 
@@ -48,13 +70,95 @@ html {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv11", "ss01";
 }
 
 code,
+kbd,
 pre,
 .font-mono {
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
+  font-feature-settings: normal;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+/* Data tables */
+.tbl {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+.tbl th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface);
+  text-align: left;
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.tbl td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.tbl tbody tr:last-child td {
+  border-bottom: 0;
+}
+.tbl tbody tr:hover td {
+  background: var(--surface-2);
+}
+.tbl tbody tr.is-active td {
+  background: var(--accent-soft);
+}
+.tbl .num,
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.tbl th.num {
+  text-align: right;
+}
+
+/* Highlighted field text in a simulated document page */
+mark.ev {
+  background: var(--accent-soft);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 2px;
+  box-shadow: inset 0 -1.5px 0 var(--accent);
+  cursor: pointer;
+}
+mark.ev:hover {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+mark.ev.is-selected {
+  background: var(--accent);
+  color: var(--accent-fg);
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+/* Thin scrollbars inside panes */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }

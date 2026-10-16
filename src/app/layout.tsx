@@ -1,51 +1,47 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import type { ReactNode } from "react";
-import { RoleSwitcher } from "@/components/role-switcher";
-import { Badge } from "@/components/ui";
+import { Sidebar } from "@/components/shell/sidebar";
+import { Topbar } from "@/components/shell/topbar";
+import { fmtDate } from "@/lib/format";
 import { getPacket } from "@/lib/packet/load";
 import { canViewSensitive } from "@/lib/roles";
 import { getCurrentActor, listActors } from "@/lib/session";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Miraflores Workpaper",
+  title: { default: "Miraflores Workpaper", template: "%s · Workpaper" },
   description: "Evidence, calculation and review record for one household's tax return.",
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const { packet } = getPacket();
+  const { packet, index } = getPacket();
   const actor = await getCurrentActor();
   const actors = listActors();
-  const masked = !canViewSensitive(actor);
+  const latest = index.versions.get(index.latestVersion)!;
 
   return (
-    <html lang="en" className={geistSans.variable + " " + geistMono.variable + " h-full antialiased"}>
-      <body className="flex min-h-full flex-col">
-        <header className="border-b border-border bg-surface">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-            <Link href="/" className="font-semibold">
-              {packet.firm.name} Workpaper
-            </Link>
-            <span className="text-sm text-muted">
-              {packet.packet.name} · {packet.packet.client_id}
-            </span>
-            <nav className="ml-auto flex items-center gap-4 text-sm">
-              <Link href="/" className="hover:underline">
-                Overview
-              </Link>
-            </nav>
-            <div className="flex items-center gap-2">
-              {masked ? <Badge tone="warn">sensitive data masked</Badge> : null}
-              <RoleSwitcher actors={actors} currentId={actor.id} />
-            </div>
+    <html lang="en" className={inter.variable + " " + mono.variable + " h-full"}>
+      <body className="min-h-full">
+        <div className="flex min-h-screen">
+          <Sidebar
+            firm={packet.firm.name}
+            client={{
+              name: packet.packet.name.replace(/ - tax year \d{4}$/, ""),
+              clientId: packet.packet.client_id,
+              taxYear: packet.household.tax_year,
+              version: latest.version,
+              computedAt: fmtDate(latest.computed_at),
+            }}
+          />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <Topbar actors={actors} actor={actor} masked={!canViewSensitive(actor)} />
+            <main className="mx-auto w-full max-w-[1440px] flex-1 px-6 py-6 lg:px-8">{children}</main>
           </div>
-        </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
+        </div>
       </body>
     </html>
   );

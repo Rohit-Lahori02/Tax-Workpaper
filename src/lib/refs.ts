@@ -83,12 +83,33 @@ export function formatRef(ref: Ref): string {
   }
 }
 
-/**
- * Where a reference opens in the app. Phase 0 sends everything to the generic
- * record page; later phases point kinds at their dedicated screens here, in one place.
- */
+/** Where a reference opens in the app. The one place that knows the routes. */
 export function hrefFor(raw: string): string {
-  return `/r/${encodeURIComponent(raw)}`;
+  const ref = parseRef(raw);
+  switch (ref.kind) {
+    case "value":
+      return `/values/${ref.id}`;
+    case "document":
+      return `/documents/${ref.id}` + (ref.page ? `?page=${ref.page}` : "");
+    case "line":
+      return `/lines/${encodeURIComponent(ref.key)}`;
+    case "version":
+      return `/return?v=${ref.id}`;
+    default:
+      return `/r/${encodeURIComponent(raw)}`;
+  }
+}
+
+export function documentHref(docId: string, opts: { page?: number; value?: string } = {}): string {
+  const q = new URLSearchParams();
+  if (opts.page) q.set("page", String(opts.page));
+  if (opts.value) q.set("v", opts.value);
+  const s = q.toString();
+  return `/documents/${docId}` + (s ? `?${s}` : "");
+}
+
+export function lineHref(key: string, version?: string): string {
+  return `/lines/${encodeURIComponent(key)}` + (version ? `?v=${version}` : "");
 }
 
 /** RFC 6901 JSON Pointer lookup. Returns undefined when the path does not exist. */

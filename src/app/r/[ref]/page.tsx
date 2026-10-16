@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { DocumentRecord } from "@/components/record/document-record";
-import { GenericRecord } from "@/components/record/generic-record";
-import { LineRecord } from "@/components/record/line-record";
-import { ValueRecord } from "@/components/record/value-record";
-import { sensitiveLiterals } from "@/lib/mask";
+import { notFound, redirect } from "next/navigation";
+import { PageHeader } from "@/components/page-header";
+import { Card } from "@/components/ui";
+import { redactDeep, sensitiveLiterals } from "@/lib/mask";
 import { getPacket } from "@/lib/packet/load";
 import { resolveRef } from "@/lib/packet/resolve";
-import { parseRef } from "@/lib/refs";
+import { hrefFor, parseRef } from "@/lib/refs";
 import { canViewSensitive } from "@/lib/roles";
 import { getCurrentActor } from "@/lib/session";
 
@@ -23,30 +21,34 @@ function decode(raw: string): string | null {
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { ref } = await params;
-  return { title: (decode(ref) ?? ref) + " · Workpaper" };
+  return { title: decode(ref) ?? ref };
 }
 
+/** Fallback record view for reference kinds that do not have a dedicated screen yet. */
 export default async function RecordPage({ params }: { params: Params }) {
   const { ref: raw } = await params;
   const refStr = decode(raw);
   if (!refStr) notFound();
 
-  const { packet, index } = getPacket();
-  const actor = await getCurrentActor();
-  const reveal = canViewSensitive(actor);
-  const literals = reveal ? [] : sensitiveLiterals(packet);
-
-  const resolved = resolveRef(parseRef(refStr), packet, index);
-  if (!resolved) notFound();
-
-  switch (resolved.kind) {
-    case "value":
-      return <ValueRecord resolved={resolved} index={index} reveal={reveal} />;
-    case "document":
-      return <DocumentRecord resolved={resolved} index={index} reveal={reveal} literals={literals} />;
-    case "line":
-      return <LineRecord resolved={resolved} packet={packet} index={index} />;
-    case "generic":
-      return <GenericRecord resolved={resolved} refStr={refStr} literals={literals} />;
+  const parsed = parseRef(refStr);
+  if (parsed.kind === "value" || parsed.kind === "document" || parsed.kind === "line" || parsed.kind === "version") {
+    redirect(hrefFor(refStr));
   }
+
+  const { packet, index } = getPacket();
+  const resolved = resolveRef(parsed, packet, index);
+  if (!resolved || resolved.kind !== "generic") notFound();
+
+  const actor = await getCurrentActor();
+  const literals = canViewSensitive(actor) ? [] : sensitiveLiterals(packet);
+  const data = literals.length ? redactDeep(resolved.data, literals) : resolved.data;
+
+  return (
+    <>
+      <PageHeader eyebrow={<span className="font-mono">{refStr}</span>} title={resolved.title} description={resolved.subtitle} />
+      <Card title="As delivered in the packet" flush>
+        <pre className="overflow-auto whitespace-pre-wrap p-4 font-mono text-[12px] leading-5">{JSON.stringify(data, null, 2)}</pre>
+      </Card>
+    </>
+  );
 }

@@ -57,7 +57,7 @@ export function DocumentTable({ rows, version }: { rows: DocumentRow[]; version:
               type="button"
               onClick={() => setFilter(c.key)}
               className={cn(
-                "rounded-md px-2 py-1 text-[12px] font-medium",
+                "rounded-full px-2.5 py-1 text-[12px] font-medium",
                 filter === c.key ? "bg-accent text-accent-fg" : "bg-surface-2 text-muted hover:text-foreground",
               )}
             >
@@ -70,7 +70,8 @@ export function DocumentTable({ rows, version }: { rows: DocumentRow[]; version:
             value={owner}
             onChange={(e) => setOwner(e.target.value)}
             aria-label="Belongs to"
-            className="h-8 rounded-md border border-border bg-surface px-2 text-[12px]"
+            suppressHydrationWarning
+            className="h-8 rounded-full border border-border bg-surface px-3 text-[12px]"
           >
             <option value="all">Everyone</option>
             {owners.map((o) => (
@@ -84,7 +85,8 @@ export function DocumentTable({ rows, version }: { rows: DocumentRow[]; version:
             onChange={(e) => setQ(e.target.value)}
             placeholder="Filter by id, title, issuer, type"
             aria-label="Filter documents"
-            className="h-8 w-64 rounded-md border border-border bg-surface px-2.5 text-[12px] outline-none focus:border-accent"
+            suppressHydrationWarning
+            className="h-8 w-64 rounded-full border border-border bg-surface px-3 text-[12px] outline-none focus:border-accent"
           />
         </div>
       </div>

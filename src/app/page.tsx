@@ -1,10 +1,12 @@
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Files, FileSpreadsheet } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { RefLink } from "@/components/ref-link";
-import { Badge, Card, Empty, KV, Stat, type Tone } from "@/components/ui";
+import { Sparkline } from "@/components/sparkline";
+import { Badge, Card, Empty, KV, Pill, StackedBar, Stat, type Tone } from "@/components/ui";
 import { filingStatusLabel, fmtBalance, fmtDate, fmtDateTime, fmtMoney, fmtNumber } from "@/lib/format";
 import { maskPin, maskSsn } from "@/lib/mask";
+import { documentRows } from "@/lib/packet/documents";
 import { getPacket } from "@/lib/packet/load";
 import { canViewSensitive } from "@/lib/roles";
 import { getCurrentActor } from "@/lib/session";
@@ -14,7 +16,7 @@ function delta(current: number, previous: number | undefined, label: string): { 
   const d = current - previous;
   if (d === 0) return { text: "unchanged since " + label, tone: "neutral" };
   const sign = d > 0 ? "+" : "−";
-  return { text: sign + fmtMoney(Math.abs(d)) + " since " + label, tone: d > 0 ? "warn" : "ok" };
+  return { text: sign + fmtMoney(Math.abs(d)) + " vs " + label, tone: d > 0 ? "warn" : "ok" };
 }
 
 export default async function OverviewPage() {
@@ -24,15 +26,15 @@ export default async function OverviewPage() {
   const latest = index.versions.get(index.latestVersion)!;
   const prevId = index.versionOrder[index.versionOrder.length - 2];
   const prev = prevId ? index.versions.get(prevId) : undefined;
+  const series = (pick: (v: typeof latest) => number) => index.versionOrder.map((id) => pick(index.versions.get(id)!));
 
-  const docCounts = { extracted: 0, partial: 0, not_extracted: 0 };
-  for (const d of packet.documents) docCounts[d.extraction.status] += 1;
-  const attention = packet.documents.filter((d) => {
-    const u = index.documentUsage.get(d.id)!;
-    const reached = u.linesReached.some((l) => l.version === index.latestVersion);
-    const superseded = u.supersededIn.length > 0;
-    return !superseded && !reached;
-  });
+  const docs = documentRows(index, index.latestVersion);
+  const docCounts = {
+    reached: docs.filter((d) => d.state === "reached").length,
+    unused: docs.filter((d) => d.state === "unused").length,
+    superseded: docs.filter((d) => d.state === "superseded").length,
+    notExtracted: docs.filter((d) => d.state === "not_extracted").length,
+  };
   const warnings = latest.diagnostics.filter((d) => d.severity === "warning");
   const infos = latest.diagnostics.filter((d) => d.severity === "info");
   const integrityWarnings = index.integrity.filter((i) => i.severity === "warning");
@@ -40,50 +42,55 @@ export default async function OverviewPage() {
   return (
     <>
       <PageHeader
-        eyebrow={filingStatusLabel(packet.household.filing_status) + " · Tax year " + packet.household.tax_year}
+        eyebrow={filingStatusLabel(packet.household.filing_status) + " · Tax year " + packet.household.tax_year + " · " + packet.packet.client_id}
         title={packet.packet.name.replace(/ - tax year \d{4}$/, "")}
-        description={
-          "Return " + latest.version + " is current, computed " + fmtDateTime(latest.computed_at) + ". " + latest.trigger
-        }
-        meta={
+        description={"Return " + latest.version + " is current, computed " + fmtDateTime(latest.computed_at) + "."}
+        actions={
           <>
-            <Badge tone="accent">{index.versionOrder.length} versions</Badge>
-            <Badge tone={warnings.length ? "warn" : "ok"}>{warnings.length} engine warnings</Badge>
-            <Badge tone={attention.length ? "warn" : "ok"}>{attention.length} documents reach no line</Badge>
+            <Pill href={"/return?v=" + latest.version} primary icon={<FileSpreadsheet className="h-3.5 w-3.5" />}>
+              Open return {latest.version}
+            </Pill>
+            <Pill href="/documents" icon={<Files className="h-3.5 w-3.5" />}>
+              Documents
+            </Pill>
           </>
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Stat
           label="Federal total tax"
           value={fmtMoney(latest.summary.federal.total_tax)}
           delta={delta(latest.summary.federal.total_tax, prev?.summary.federal.total_tax, prevId ?? "")}
+          chart={<Sparkline values={series((v) => v.summary.federal.total_tax)} className="text-accent" />}
         />
         <Stat
           label="Federal balance due"
           value={fmtBalance(latest.summary.federal.balance_due)}
           delta={delta(latest.summary.federal.balance_due, prev?.summary.federal.balance_due, prevId ?? "")}
-          hint={latest.summary.federal.penalty ? "penalty " + fmtMoney(latest.summary.federal.penalty) : undefined}
+          hint={latest.summary.federal.penalty ? "incl. " + fmtMoney(latest.summary.federal.penalty) + " penalty" : undefined}
+          chart={<Sparkline values={series((v) => v.summary.federal.balance_due)} className="text-accent" />}
         />
         <Stat
           label="California total tax"
           value={fmtMoney(latest.summary.california.total_tax)}
           delta={delta(latest.summary.california.total_tax, prev?.summary.california.total_tax, prevId ?? "")}
+          chart={<Sparkline values={series((v) => v.summary.california.total_tax)} className="text-accent" />}
         />
         <Stat
           label="California balance"
           value={fmtBalance(latest.summary.california.balance_due)}
           delta={delta(latest.summary.california.balance_due, prev?.summary.california.balance_due, prevId ?? "")}
           tone={latest.summary.california.balance_due < 0 ? "ok" : undefined}
+          chart={<Sparkline values={series((v) => -v.summary.california.balance_due)} className="text-ok" />}
         />
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-3">
+      <div className="mt-4 grid gap-4 xl:grid-cols-3">
         <Card
           title="Return versions"
           description="Each engine run, what triggered it, and how much moved."
-          className="lg:col-span-2"
+          className="xl:col-span-2"
           flush
         >
           <table className="tbl">
@@ -92,10 +99,10 @@ export default async function OverviewPage() {
                 <th>Version</th>
                 <th>Computed</th>
                 <th>Trigger</th>
-                <th className="num">Documents</th>
-                <th className="num">Lines changed</th>
-                <th className="num">Federal balance</th>
-                <th className="num">California balance</th>
+                <th className="num">Docs</th>
+                <th className="num">Lines moved</th>
+                <th className="num">Federal</th>
+                <th className="num">California</th>
                 <th />
               </tr>
             </thead>
@@ -106,11 +113,18 @@ export default async function OverviewPage() {
                 return (
                   <tr key={vid}>
                     <td className="font-medium">
-                      {vid} {isLatest ? <Badge tone="accent">current</Badge> : null}
+                      <span className="flex items-center gap-2">
+                        {vid}
+                        {isLatest ? (
+                          <Badge tone="accent" dot>
+                            current
+                          </Badge>
+                        ) : null}
+                      </span>
                     </td>
                     <td className="whitespace-nowrap text-muted">{fmtDate(v.computed_at)}</td>
                     <td className="max-w-md text-muted" title={v.trigger}>
-                      <span className="line-clamp-2">{v.trigger}</span>
+                      <span className="line-clamp-1">{v.trigger}</span>
                     </td>
                     <td className="num">{v.documents_used.length}</td>
                     <td className="num">{v.changes_from_previous.length || "—"}</td>
@@ -129,32 +143,29 @@ export default async function OverviewPage() {
         </Card>
 
         <Card title="Household" description="As the client entered it in the organizer.">
-          <ul className="grid gap-2.5">
+          <ul className="grid gap-3">
             {packet.household.people.map((p) => (
               <li key={p.id} className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <RefLink refId={"household:" + p.id} plain className="font-medium text-foreground">
                     {p.name}
                   </RefLink>
-                  <div className="text-xs text-muted">
+                  <div className="text-[12px] text-muted">
                     {(p.relationship ?? p.role) + " · born " + fmtDate(p.dob)}
                     {p.full_time_student ? " · student" : ""}
                   </div>
                 </div>
-                <div className="shrink-0 text-right font-mono text-[11px] text-muted">
+                <div className="shrink-0 text-right font-mono text-[11px] leading-4 text-muted">
                   <div>{p.ssn ? (reveal ? p.ssn : maskSsn(p.ssn)) : "no SSN"}</div>
                   {p.ip_pin ? <div>IP PIN {reveal ? p.ip_pin : maskPin()}</div> : null}
                 </div>
               </li>
             ))}
           </ul>
-          <div className="mt-3 border-t border-border pt-3">
+          <div className="mt-4 border-t border-border pt-3">
             <KV
               rows={[
-                [
-                  "Residency",
-                  packet.household.residency.map((r) => r.state + " " + fmtDate(r.from) + " – " + fmtDate(r.to)).join(" · "),
-                ],
+                ["Residency", packet.household.residency.map((r) => r.state + " · " + fmtDate(r.from) + " to " + fmtDate(r.to)).join("; ")],
                 ["2024 AGI", fmtMoney(packet.household.prior_year_agi_for_esignature)],
               ]}
             />
@@ -163,43 +174,49 @@ export default async function OverviewPage() {
 
         <Card
           title="Documents"
-          description="Where the 74 documents stand against the current return."
+          description={"Where the " + docs.length + " documents stand against " + latest.version + "."}
           aside={
             <Link href="/documents" className="text-accent hover:underline">
               Open index
             </Link>
           }
         >
-          <KV
-            rows={[
-              ["Extracted", fmtNumber(docCounts.extracted)],
-              ["Partially extracted", fmtNumber(docCounts.partial)],
-              ["Not extracted", fmtNumber(docCounts.not_extracted)],
-              ["Extracted values", fmtNumber(packet.extracted_values.length)],
-              [
-                "Reach no line in " + latest.version,
-                attention.length ? (
-                  <span className="flex flex-wrap gap-1">
-                    {attention.map((d) => (
-                      <RefLink key={d.id} refId={d.id} />
-                    ))}
-                  </span>
-                ) : (
-                  "none"
-                ),
-              ],
+          <StackedBar
+            total={docs.length}
+            parts={[
+              { label: "on the return", value: docCounts.reached, tone: "ok" },
+              { label: "reach no line", value: docCounts.unused, tone: "warn" },
+              { label: "not extracted", value: docCounts.notExtracted, tone: "danger" },
+              { label: "superseded", value: docCounts.superseded, tone: "neutral" },
             ]}
           />
+          <div className="mt-4 border-t border-border pt-3">
+            <KV
+              rows={[
+                ["Extracted values", fmtNumber(packet.extracted_values.length)],
+                [
+                  "Reach no line",
+                  <span key="u" className="flex flex-wrap gap-x-2 gap-y-0.5">
+                    {docs
+                      .filter((d) => d.state === "unused")
+                      .map((d) => (
+                        <RefLink key={d.id} refId={d.id} />
+                      ))}
+                  </span>,
+                ],
+              ]}
+            />
+          </div>
         </Card>
 
         <Card title="Deadlines">
-          <ul className="grid gap-1.5 text-[13px]">
+          <ul className="grid gap-2 text-[13px]">
             {[...packet.firm.deadlines]
               .sort((a, b) => a.date.localeCompare(b.date))
               .map((d) => (
                 <li key={d.what} className="flex items-baseline justify-between gap-3">
-                  <span className="min-w-0">{d.what}</span>
-                  <span className="shrink-0 font-mono text-xs text-muted">{fmtDate(d.date)}</span>
+                  <span className="min-w-0 leading-snug">{d.what}</span>
+                  <span className="shrink-0 font-mono text-[11.5px] text-muted">{fmtDate(d.date)}</span>
                 </li>
               ))}
           </ul>
@@ -208,7 +225,7 @@ export default async function OverviewPage() {
         <Card title="Try a trace" description="Any id from the packet opens as a record with its links.">
           <div className="flex flex-wrap gap-1.5">
             {["F1040.11", "SchC.1", "F8949.B.N1", "ev-0703", "D30", "D31", "D10", "qa-14", "asset:SAC-BLDG", "tl-21"].map((r) => (
-              <RefLink key={r} refId={r} className="rounded-md border border-border bg-surface-2 px-2 py-1 hover:bg-accent-soft hover:no-underline">
+              <RefLink key={r} refId={r} className="rounded-full border border-border bg-surface px-2.5 py-1 hover:border-border-strong hover:bg-surface-2 hover:no-underline">
                 {r}
               </RefLink>
             ))}
@@ -217,24 +234,23 @@ export default async function OverviewPage() {
 
         <Card
           title={"Engine diagnostics · " + latest.version}
-          description="What the computation engine flagged. These are the engine's own words; the workpaper's checks are separate."
+          description="What the computation engine flagged, in its own words."
           aside={warnings.length + " warnings · " + infos.length + " info"}
-          className="lg:col-span-2"
+          className="xl:col-span-2"
           flush
         >
           <ul className="divide-y divide-border">
             {latest.diagnostics.map((d) => (
-              <li key={d.code + d.message} className="grid gap-1 px-4 py-2.5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge tone={d.severity === "warning" ? "warn" : "neutral"} mono>
-                    {d.code}
-                  </Badge>
-                  <span className="text-[13px]">{d.message}</span>
-                </div>
-                <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                  {d.refs.map((r) => (
-                    <RefLink key={r} refId={r} />
-                  ))}
+              <li key={d.code + d.message} className="flex gap-3 px-4 py-2.5">
+                <span className={"mt-1.5 h-2 w-2 shrink-0 rounded-full " + (d.severity === "warning" ? "bg-warn" : "bg-border-strong")} />
+                <div className="min-w-0">
+                  <div className="text-[13px]">{d.message}</div>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                    <span className="font-mono text-[11px] text-muted">{d.code}</span>
+                    {d.refs.map((r) => (
+                      <RefLink key={r} refId={r} />
+                    ))}
+                  </div>
                 </div>
               </li>
             ))}
@@ -243,7 +259,7 @@ export default async function OverviewPage() {
 
         <Card
           title="Packet integrity"
-          description="Checks that trust neither the engine nor the extractor: every reference must land, every count must agree."
+          description="Checks that trust neither the engine nor the extractor."
           aside={integrityWarnings.length + " warnings"}
           flush
         >
@@ -254,17 +270,16 @@ export default async function OverviewPage() {
           ) : (
             <ul className="divide-y divide-border">
               {index.integrity.map((i, n) => (
-                <li key={n} className="grid gap-1 px-4 py-2.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge tone={i.severity === "warning" ? "warn" : "neutral"} mono>
-                      {i.code}
-                    </Badge>
-                  </div>
-                  <p className="text-[13px]">{i.message}</p>
-                  <div className="flex flex-wrap gap-x-3">
-                    {i.refs.map((r) => (
-                      <RefLink key={r} refId={r} />
-                    ))}
+                <li key={n} className="flex gap-3 px-4 py-2.5">
+                  <span className={"mt-1.5 h-2 w-2 shrink-0 rounded-full " + (i.severity === "warning" ? "bg-warn" : "bg-border-strong")} />
+                  <div className="min-w-0">
+                    <div className="text-[13px]">{i.message}</div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-3">
+                      <span className="font-mono text-[11px] text-muted">{i.code}</span>
+                      {i.refs.map((r) => (
+                        <RefLink key={r} refId={r} />
+                      ))}
+                    </div>
                   </div>
                 </li>
               ))}

@@ -18,14 +18,14 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <header className={cn("mb-6 flex flex-wrap items-start justify-between gap-4", className)}>
+    <header className={cn("mb-5 flex flex-wrap items-end justify-between gap-4", className)}>
       <div className="min-w-0">
-        {eyebrow ? <div className="mb-1 text-xs font-medium text-muted">{eyebrow}</div> : null}
-        <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
-        {description ? <p className="mt-1 max-w-3xl text-[13px] text-muted">{description}</p> : null}
-        {meta ? <div className="mt-2 flex flex-wrap items-center gap-2">{meta}</div> : null}
+        {eyebrow ? <div className="mb-1.5 text-[12px] font-medium text-muted">{eyebrow}</div> : null}
+        <h1 className="text-[22px] font-semibold leading-7 tracking-tight">{title}</h1>
+        {description ? <p className="mt-1 max-w-3xl text-[13px] leading-5 text-muted">{description}</p> : null}
+        {meta ? <div className="mt-2.5 flex flex-wrap items-center gap-2">{meta}</div> : null}
       </div>
-      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
     </header>
   );
 }

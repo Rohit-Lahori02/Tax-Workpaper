@@ -25,7 +25,7 @@ export function FormNav({ forms, active, version }: { forms: FormEntry[]; active
     { label: "California", items: forms.filter((f) => f.jurisdiction === "california") },
   ];
   return (
-    <nav className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-auto scroll-thin rounded-[10px] border border-border bg-surface p-2 shadow-[var(--shadow-card)]">
+    <nav className="card sticky top-[68px] max-h-[calc(100vh-6rem)] overflow-auto scroll-thin p-2">
       {groups.map((g) => (
         <div key={g.label} className="mb-2">
           <div className="px-2 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">{g.label}</div>
@@ -36,8 +36,8 @@ export function FormNav({ forms, active, version }: { forms: FormEntry[]; active
                   href={"/return/" + encodeURIComponent(f.form) + "?v=" + version}
                   title={formLabel(f.form)}
                   className={cn(
-                    "flex items-center justify-between gap-2 rounded px-2 py-1 text-[13px]",
-                    f.form === active ? "bg-accent-soft font-medium text-accent" : "hover:bg-surface-2",
+                    "flex h-7 items-center justify-between gap-2 rounded-md px-2 text-[12.5px]",
+                    f.form === active ? "bg-accent-soft font-medium text-foreground" : "text-muted hover:bg-surface-2 hover:text-foreground",
                   )}
                 >
                   <span className="truncate">{formShort(f.form)}</span>

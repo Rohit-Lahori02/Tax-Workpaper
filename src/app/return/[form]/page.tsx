@@ -67,7 +67,7 @@ export default async function FormPage({ params, searchParams }: Props) {
         <FormNav forms={forms} active={form} version={version} />
         <Card flush>
           <div className="overflow-auto">
-            <table className="tbl">
+            <table className="tbl dense">
               <thead>
                 <tr>
                   <th>Line</th>
@@ -88,7 +88,7 @@ export default async function FormPage({ params, searchParams }: Props) {
                   return (
                     <tr key={l.key}>
                       <td className="whitespace-nowrap">
-                        <RefLink refId={l.key} href={lineHref(l.key, version)}>
+                        <RefLink refId={l.key} href={lineHref(l.key, version)} className="text-muted hover:text-accent">
                           {l.line}
                         </RefLink>
                       </td>
@@ -106,11 +106,13 @@ export default async function FormPage({ params, searchParams }: Props) {
                       <td className="num text-muted">{prior ? fmtLineValue(prior.value) : "—"}</td>
                       <td className="num">
                         {vr ? (
-                          <span className={vr.flagged ? "text-warn" : "text-muted"}>
-                            {(vr.diff > 0 ? "+" : "") + fmtLineValue(vr.diff)}
-                            {vr.pct !== null ? <span className="ml-1 text-[11px]">({fmtPct(vr.pct)})</span> : null}
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className={vr.flagged ? "text-foreground" : "text-muted"}>
+                              {(vr.diff > 0 ? "+" : "") + fmtLineValue(vr.diff)}
+                              {vr.pct !== null ? <span className="ml-1 text-[11px] text-muted">{fmtPct(vr.pct)}</span> : null}
+                            </span>
                             {vr.flagged ? (
-                              <Badge tone="warn" className="ml-1.5">
+                              <Badge tone="warn" dot>
                                 swing
                               </Badge>
                             ) : null}

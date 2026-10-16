@@ -1,30 +1,86 @@
 @import "tailwindcss";
 
+/* ---------- Design tokens ---------- */
 :root {
-  --bg: #f5f6f8;
+  --bg: #f4f5f8;
   --surface: #ffffff;
-  --surface-2: #f1f3f6;
-  --fg: #0f172a;
-  --muted: #64748b;
-  --border: #e3e7ee;
-  --border-strong: #c9d2df;
-  --accent: #2457d6;
+  --surface-2: #f3f4f8;
+  --surface-3: #e9ebf2;
+  --fg: #141826;
+  --muted: #6b7084;
+  --border: #e5e7ef;
+  --border-strong: #cfd3df;
+  --accent: #4f5bd5;
   --accent-fg: #ffffff;
-  --accent-soft: #e8eefc;
-  --ok: #0f7b4f;
-  --ok-soft: #e6f5ee;
-  --warn: #a15c07;
-  --warn-soft: #fdf3dc;
-  --danger: #b42318;
-  --danger-soft: #fdecea;
-  --ring: rgba(36, 87, 214, 0.35);
-  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --accent-soft: rgba(79, 91, 213, 0.1);
+  --ok: #15803d;
+  --ok-soft: rgba(21, 128, 61, 0.1);
+  --warn: #b45309;
+  --warn-soft: rgba(180, 83, 9, 0.12);
+  --danger: #be123c;
+  --danger-soft: rgba(190, 18, 60, 0.1);
+  --ring: rgba(79, 91, 213, 0.35);
+  --shadow-card: 0 1px 2px rgba(20, 24, 38, 0.04), 0 0 0 1px rgba(20, 24, 38, 0.02);
+  --sidebar: #ffffff;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #14161e;
+  --surface: #1b1e28;
+  --surface-2: #222634;
+  --surface-3: #2a2f40;
+  --fg: #e9ebf1;
+  --muted: #8b91a3;
+  --border: #2a2e3c;
+  --border-strong: #3a4052;
+  --accent: #7c8cff;
+  --accent-fg: #0f1117;
+  --accent-soft: rgba(124, 140, 255, 0.16);
+  --ok: #4ade80;
+  --ok-soft: rgba(74, 222, 128, 0.14);
+  --warn: #fbbf24;
+  --warn-soft: rgba(251, 191, 36, 0.14);
+  --danger: #fb7185;
+  --danger-soft: rgba(251, 113, 133, 0.14);
+  --ring: rgba(124, 140, 255, 0.45);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --sidebar: #171a23;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14161e;
+    --surface: #1b1e28;
+    --surface-2: #222634;
+    --surface-3: #2a2f40;
+    --fg: #e9ebf1;
+    --muted: #8b91a3;
+    --border: #2a2e3c;
+    --border-strong: #3a4052;
+    --accent: #7c8cff;
+    --accent-fg: #0f1117;
+    --accent-soft: rgba(124, 140, 255, 0.16);
+    --ok: #4ade80;
+    --ok-soft: rgba(74, 222, 128, 0.14);
+    --warn: #fbbf24;
+    --warn-soft: rgba(251, 191, 36, 0.14);
+    --danger: #fb7185;
+    --danger-soft: rgba(251, 113, 133, 0.14);
+    --ring: rgba(124, 140, 255, 0.45);
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --sidebar: #171a23;
+    color-scheme: dark;
+  }
 }
 
 @theme inline {
   --color-background: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-sidebar: var(--sidebar);
   --color-foreground: var(--fg);
   --color-muted: var(--muted);
   --color-border: var(--border);
@@ -38,33 +94,12 @@
   --color-warn-soft: var(--warn-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-jetbrains);
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --radius-card: 12px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0b0f17;
-    --surface: #121826;
-    --surface-2: #182033;
-    --fg: #e6eaf2;
-    --muted: #8b95a7;
-    --border: #223049;
-    --border-strong: #2e3d5a;
-    --accent: #6b9cff;
-    --accent-fg: #0b0f17;
-    --accent-soft: #1a2a4d;
-    --ok: #3ccf91;
-    --ok-soft: #10301f;
-    --warn: #f2b84b;
-    --warn-soft: #3a2a0a;
-    --danger: #ff7b6e;
-    --danger-soft: #3b1512;
-    --ring: rgba(107, 156, 255, 0.4);
-    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
-  }
-}
-
+/* ---------- Base ---------- */
 html {
   height: 100%;
 }
@@ -72,27 +107,33 @@ html {
 body {
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
-  font-size: 14px;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: "cv11", "ss01";
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv11", "ss01", "ss03";
 }
 
 code,
 kbd,
 pre,
 .font-mono {
-  font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
+  font-family: var(--font-mono);
   font-feature-settings: normal;
 }
 
 :focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 1px;
+  border-radius: 4px;
 }
 
-/* Data tables */
+::selection {
+  background: var(--accent-soft);
+}
+
+/* ---------- Data tables ---------- */
 .tbl {
   width: 100%;
   border-collapse: separate;
@@ -107,17 +148,17 @@ pre,
   text-align: left;
   font-weight: 500;
   font-size: 11px;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--muted);
-  padding: 8px 10px;
+  padding: 9px 12px;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 .tbl td {
-  padding: 7px 10px;
+  padding: 9px 12px;
   border-bottom: 1px solid var(--border);
-  vertical-align: top;
+  vertical-align: middle;
 }
 .tbl tbody tr:last-child td {
   border-bottom: 0;
@@ -137,8 +178,14 @@ pre,
 .tbl th.num {
   text-align: right;
 }
+.tbl.dense th {
+  padding: 7px 12px;
+}
+.tbl.dense td {
+  padding: 6px 12px;
+}
 
-/* Highlighted field text in a simulated document page */
+/* ---------- Highlighted field text in a simulated page ---------- */
 mark.ev {
   background: var(--accent-soft);
   color: inherit;
@@ -157,8 +204,43 @@ mark.ev.is-selected {
   box-shadow: 0 0 0 2px var(--ring);
 }
 
-/* Thin scrollbars inside panes */
+/* ---------- Misc ---------- */
 .scroll-thin {
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 9999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+  white-space: nowrap;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+.pill:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+.pill.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+.pill.primary:hover {
+  filter: brightness(1.06);
 }

@@ -1,18 +1,10 @@
 "use client";
 
-import { ChevronsUpDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useTransition } from "react";
 import { cn } from "@/components/ui";
 import { switchActor } from "@/lib/actions";
 import { ROLE_LABELS, type Actor } from "@/lib/roles";
-
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("");
-}
 
 export function RoleSwitcher({ actors, currentId }: { actors: Actor[]; currentId: string }) {
   const [pending, startTransition] = useTransition();
@@ -20,20 +12,16 @@ export function RoleSwitcher({ actors, currentId }: { actors: Actor[]; currentId
   return (
     <form
       action={switchActor}
-      className={cn(
-        "relative flex items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-2 text-[13px]",
-        pending && "opacity-60",
-      )}
+      className={cn("relative flex h-8 items-center rounded-full border border-border bg-surface pl-3 pr-2 text-[12.5px]", pending && "opacity-60")}
       title={current.note ?? ROLE_LABELS[current.role]}
     >
-      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent-soft text-[10px] font-semibold text-accent">
-        {initials(current.name)}
-      </span>
+      <span className="mr-1.5 text-muted">Viewing as</span>
       <select
         aria-label="Acting as"
         name="actor"
         defaultValue={currentId}
         disabled={pending}
+        suppressHydrationWarning
         onChange={(e) => {
           const data = new FormData(e.currentTarget.form ?? undefined);
           startTransition(() => switchActor(data));
@@ -46,7 +34,7 @@ export function RoleSwitcher({ actors, currentId }: { actors: Actor[]; currentId
           </option>
         ))}
       </select>
-      <ChevronsUpDown className="pointer-events-none absolute right-2 h-3.5 w-3.5 text-muted" />
+      <ChevronDown className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-muted" />
     </form>
   );
 }

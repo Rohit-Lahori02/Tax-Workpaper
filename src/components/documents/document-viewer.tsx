@@ -88,7 +88,7 @@ export function DocumentViewer({
   return (
     <div className="grid gap-4 xl:grid-cols-[300px_1fr_300px]">
       {/* Values list */}
-      <section className="flex max-h-[calc(100vh-10rem)] flex-col overflow-hidden rounded-[10px] border border-border bg-surface shadow-[var(--shadow-card)]">
+      <section className="card flex max-h-[calc(100vh-10rem)] flex-col overflow-hidden">
         <div className="border-b border-border p-2">
           <div className="relative">
             <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
@@ -97,7 +97,8 @@ export function DocumentViewer({
               onChange={(e) => setQ(e.target.value)}
               placeholder={"Filter " + data.values.length + " values"}
               aria-label="Filter extracted values"
-              className="h-8 w-full rounded-md border border-border bg-surface-2 pl-7 pr-2 text-[12px] outline-none focus:border-accent"
+              suppressHydrationWarning
+              className="h-8 w-full rounded-full border border-border bg-surface-2 pl-7 pr-2 text-[12px] outline-none focus:border-accent"
             />
           </div>
         </div>
@@ -184,7 +185,7 @@ export function DocumentViewer({
         </div>
         <div
           ref={sheetRef}
-          className="rounded-[10px] border border-border bg-surface p-6 shadow-[var(--shadow-card)] sm:p-8"
+          className="card p-6 sm:p-8"
           style={{ minHeight: "28rem" }}
         >
           <div className="mb-4 flex items-center justify-between border-b border-dashed border-border pb-2 text-[11px] uppercase tracking-wide text-muted">
@@ -219,7 +220,7 @@ export function DocumentViewer({
 
       {/* Selected value + position map */}
       <section className="grid content-start gap-4">
-        <div className="rounded-[10px] border border-border bg-surface p-4 shadow-[var(--shadow-card)]">
+        <div className="card p-4">
           {sel ? (
             <>
               <div className="flex items-start justify-between gap-2">
@@ -270,7 +271,7 @@ export function DocumentViewer({
           )}
         </div>
 
-        <div className="rounded-[10px] border border-border bg-surface p-4 shadow-[var(--shadow-card)]">
+        <div className="card p-4">
           <SectionTitle>Position on page {page}</SectionTitle>
           <div className="relative mx-auto w-full max-w-[220px] rounded border border-border-strong bg-background" style={{ aspectRatio: "8.5 / 11" }}>
             {data.values

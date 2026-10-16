@@ -25,7 +25,7 @@ export function LookupBox({ className }: { className?: string }) {
 
   return (
     <form
-      className={"relative " + (className ?? "")}
+      className={"relative max-w-xl " + (className ?? "")}
       onSubmit={(e) => {
         e.preventDefault();
         const t = q.trim();
@@ -36,16 +36,17 @@ export function LookupBox({ className }: { className?: string }) {
         }
       }}
     >
-      <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
       <input
         ref={ref}
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Jump to F1040.11, ev-0703, D30, qa-14…"
+        suppressHydrationWarning
+        placeholder="Jump to anything: F1040.11, ev-0703, D30, qa-14"
         aria-label="Jump to a packet reference"
-        className="h-8 w-72 rounded-md border border-border bg-surface-2 pl-8 pr-8 font-mono text-[12px] outline-none placeholder:font-sans placeholder:text-muted focus:border-accent focus:bg-surface"
+        className="h-8 w-full rounded-full border border-border bg-surface pl-9 pr-9 text-[12.5px] outline-none placeholder:text-muted focus:border-accent"
       />
-      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
+      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
         <Kbd>/</Kbd>
       </span>
     </form>

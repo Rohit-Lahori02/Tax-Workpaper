@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  // The packet is read from disk at runtime; make sure it ships with the server bundle.
+  outputFileTracingIncludes: {
+    "/**": ["./data/**"],
+  },
   turbopack: {
     rules: {
       "*.css": {

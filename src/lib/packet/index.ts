@@ -325,6 +325,8 @@ export function refExists(ref: Ref, packet: Packet, index: PacketIndex, version?
       return resolvePointer(packet.tax_agency_records, ref.pointer) !== undefined;
     case "engine_param":
       return resolveDotted(packet.engine_reference.parameters, ref.path) !== undefined;
+    case "check":
+      return true;
     case "unknown":
       return false;
   }

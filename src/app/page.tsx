@@ -6,6 +6,8 @@ import { Sparkline } from "@/components/sparkline";
 import { Badge, Card, Empty, KV, Pill, StackedBar, Stat, type Tone } from "@/components/ui";
 import { filingStatusLabel, fmtBalance, fmtDate, fmtDateTime, fmtMoney, fmtNumber } from "@/lib/format";
 import { maskPin, maskSsn } from "@/lib/mask";
+import { EffectBadge } from "@/components/checks/finding-row";
+import { runChecks } from "@/lib/checks/run";
 import { getLedger } from "@/lib/facts/repo";
 import { KIND_LABELS, type FactKind } from "@/lib/facts/types";
 import { documentRows } from "@/lib/packet/documents";
@@ -51,7 +53,11 @@ export default async function OverviewPage() {
   };
   const warnings = latest.diagnostics.filter((d) => d.severity === "warning");
   const infos = latest.diagnostics.filter((d) => d.severity === "info");
-  const integrityWarnings = index.integrity.filter((i) => i.severity === "warning");
+  const checks = runChecks(packet, index);
+  const topErrors = checks.findings
+    .filter((f) => f.severity === "error")
+    .sort((a, b) => Math.abs((b.effect?.federal ?? 0) + (b.effect?.california ?? 0)) - Math.abs((a.effect?.federal ?? 0) + (a.effect?.california ?? 0)))
+    .slice(0, 6);
 
   return (
     <>
@@ -59,6 +65,19 @@ export default async function OverviewPage() {
         eyebrow={filingStatusLabel(packet.household.filing_status) + " · Tax year " + packet.household.tax_year + " · " + packet.packet.client_id}
         title={packet.packet.name.replace(/ - tax year \d{4}$/, "")}
         description={"Return " + latest.version + " is current, computed " + fmtDateTime(latest.computed_at) + "."}
+        meta={
+          <>
+            <Badge tone={checks.counts.error ? "danger" : "ok"} dot>
+              {checks.counts.error} check errors
+            </Badge>
+            <Badge tone={warnings.length ? "warn" : "ok"} dot>
+              {warnings.length} engine warnings
+            </Badge>
+            <Badge tone={docCounts.unused ? "warn" : "ok"} dot>
+              {docCounts.unused} documents reach no line
+            </Badge>
+          </>
+        }
         actions={
           <>
             <Pill href={"/return?v=" + latest.version} primary icon={<FileSpreadsheet className="h-3.5 w-3.5" />}>
@@ -327,28 +346,39 @@ export default async function OverviewPage() {
         </Card>
 
         <Card
-          title="Packet integrity"
-          description="Checks that trust neither the engine nor the extractor."
-          aside={integrityWarnings.length + " warnings"}
+          title="Workpaper checks"
+          description={checks.counts.checks + " independent recomputations that trust neither the engine nor the extractor."}
+          aside={
+            <Link href="/checks" className="text-accent hover:underline">
+              All findings
+            </Link>
+          }
           flush
         >
-          {index.integrity.length === 0 ? (
+          <div className="flex gap-4 border-b border-border px-4 py-2.5 text-[12px]">
+            <span>
+              <span className="font-semibold text-danger">{checks.counts.error}</span> <span className="text-muted">errors</span>
+            </span>
+            <span>
+              <span className="font-semibold text-warn">{checks.counts.warning}</span> <span className="text-muted">warnings</span>
+            </span>
+            <span>
+              <span className="font-semibold text-ok">{checks.counts.clean}</span> <span className="text-muted">clean checks</span>
+            </span>
+          </div>
+          {topErrors.length === 0 ? (
             <div className="p-4">
-              <Empty>Every reference in the packet resolves and every count agrees.</Empty>
+              <Empty>Every check passes.</Empty>
             </div>
           ) : (
             <ul className="divide-y divide-border">
-              {index.integrity.map((i, n) => (
-                <li key={n} className="flex gap-3 px-4 py-2.5">
-                  <span className={"mt-1.5 h-2 w-2 shrink-0 rounded-full " + (i.severity === "warning" ? "bg-warn" : "bg-border-strong")} />
-                  <div className="min-w-0">
-                    <div className="text-[13px]">{i.message}</div>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-x-3">
-                      <span className="font-mono text-[11px] text-muted">{i.code}</span>
-                      {i.refs.map((r) => (
-                        <RefLink key={r} refId={r} />
-                      ))}
-                    </div>
+              {topErrors.map((f) => (
+                <li key={f.id} className="px-4 py-2.5">
+                  <Link href={"/checks/" + encodeURIComponent(f.id)} className="text-[13px] hover:underline">
+                    {f.title}
+                  </Link>
+                  <div className="mt-0.5">
+                    <EffectBadge effect={f.effect} />
                   </div>
                 </li>
               ))}

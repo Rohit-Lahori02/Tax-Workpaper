@@ -106,6 +106,7 @@ export function resolveRef(ref: Ref, packet: Packet, index: PacketIndex): Resolv
       const data = resolveDotted(packet.engine_reference.parameters, ref.path);
       return data === undefined ? null : { kind: "generic", title: "Engine parameter", subtitle: ref.path, data };
     }
+    case "check":
     case "unknown":
       return null;
   }

@@ -20,6 +20,7 @@ export type Ref =
   | { kind: "prior_year"; pointer: string }
   | { kind: "agency"; pointer: string }
   | { kind: "engine_param"; path: string }
+  | { kind: "check"; id: string }
   | { kind: "unknown"; raw: string };
 
 export type RefKind = Ref["kind"];
@@ -47,6 +48,7 @@ export function parseRef(raw: string): Ref {
   if ((m = /^py:(\/.*)$/.exec(s))) return { kind: "prior_year", pointer: m[1] };
   if ((m = /^agency:(\/.*)$/.exec(s))) return { kind: "agency", pointer: m[1] };
   if ((m = /^ref:(.+)$/.exec(s))) return { kind: "engine_param", path: m[1].replace(/^param\./, "") };
+  if ((m = /^check:(.+)$/.exec(s))) return { kind: "check", id: m[1] };
   if (LINE_KEY.test(s)) return { kind: "line", key: s };
   return { kind: "unknown", raw: s };
 }
@@ -78,6 +80,8 @@ export function formatRef(ref: Ref): string {
       return `agency:${ref.pointer}`;
     case "engine_param":
       return `ref:param.${ref.path}`;
+    case "check":
+      return `check:${ref.id}`;
     case "unknown":
       return ref.raw;
   }
@@ -95,6 +99,10 @@ export function hrefFor(raw: string): string {
       return `/lines/${encodeURIComponent(ref.key)}`;
     case "version":
       return `/return?v=${ref.id}`;
+    case "check":
+      return `/checks/${encodeURIComponent(ref.id)}`;
+    case "asset":
+      return `/assets#${encodeURIComponent(ref.id)}`;
     default:
       return `/r/${encodeURIComponent(raw)}`;
   }

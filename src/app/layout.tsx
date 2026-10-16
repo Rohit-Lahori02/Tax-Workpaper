@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
+import { runChecks } from "@/lib/checks/run";
 import { getLedger } from "@/lib/facts/repo";
 import { fmtDate } from "@/lib/format";
 import { getPacket } from "@/lib/packet/load";
@@ -44,6 +45,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             firm={packet.firm.name}
             showLedger={canSeeLedger(actor)}
             openQuestions={openQuestions}
+            checkErrors={runChecks(packet, index).counts.error}
             client={{
               name: packet.packet.name.replace(/ - tax year \d{4}$/, ""),
               clientId: packet.packet.client_id,

@@ -6,10 +6,12 @@ import { Sparkline } from "@/components/sparkline";
 import { Badge, Card, Empty, KV, Pill, StackedBar, Stat, type Tone } from "@/components/ui";
 import { filingStatusLabel, fmtBalance, fmtDate, fmtDateTime, fmtMoney, fmtNumber } from "@/lib/format";
 import { maskPin, maskSsn } from "@/lib/mask";
+import { getLedger } from "@/lib/facts/repo";
+import { KIND_LABELS, type FactKind } from "@/lib/facts/types";
 import { documentRows } from "@/lib/packet/documents";
 import { getPacket } from "@/lib/packet/load";
-import { canViewSensitive } from "@/lib/roles";
-import { getCurrentActor } from "@/lib/session";
+import { logSensitiveView } from "@/lib/sensitive";
+import { getViewer } from "@/lib/session";
 
 function delta(current: number, previous: number | undefined, label: string): { text: string; tone: Tone } | undefined {
   if (previous === undefined) return undefined;
@@ -21,8 +23,20 @@ function delta(current: number, previous: number | undefined, label: string): { 
 
 export default async function OverviewPage() {
   const { packet, index } = getPacket();
-  const actor = await getCurrentActor();
-  const reveal = canViewSensitive(actor);
+  const [{ actor, reveal }, { ledger }] = await Promise.all([getViewer(), getLedger()]);
+  if (reveal) {
+    logSensitiveView(
+      actor,
+      "/",
+      packet.household.people.flatMap((p) => [p.ssn ? "ssn:" + p.id : null, p.ip_pin ? "ip_pin:" + p.id : null]).filter((x): x is string => Boolean(x)),
+    );
+  }
+  const openQuestions = ledger.questions.filter((q) => !q.retracted && q.answers.every((a) => a.retracted)).slice().reverse();
+  const recent = ledger.all
+    .filter((f) => f.kind !== "sensitive_view")
+    .slice(-8)
+    .reverse();
+  const fmtWhen = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "UTC" });
   const latest = index.versions.get(index.latestVersion)!;
   const prevId = index.versionOrder[index.versionOrder.length - 2];
   const prev = prevId ? index.versions.get(prevId) : undefined;
@@ -207,6 +221,61 @@ export default async function OverviewPage() {
               ]}
             />
           </div>
+        </Card>
+
+        <Card
+          title="Open questions"
+          description="Answers land on the item they were asked about."
+          aside={
+            <Link href="/questions" className="text-accent hover:underline">
+              All questions
+            </Link>
+          }
+        >
+          {openQuestions.length === 0 ? (
+            <Empty>Nothing is waiting on anyone.</Empty>
+          ) : (
+            <ul className="grid gap-2.5">
+              {openQuestions.slice(0, 5).map((q) => (
+                <li key={q.id} className="text-[13px]">
+                  <div className="line-clamp-2">{String(q.body.text ?? "")}</div>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11.5px] text-muted">
+                    <span>to {q.body.to === "client" ? "the client" : String(q.body.to)}</span>
+                    <span>·</span>
+                    <RefLink refId={q.target} />
+                  </div>
+                </li>
+              ))}
+              {openQuestions.length > 5 ? <li className="text-[12px] text-muted">and {openQuestions.length - 5} more</li> : null}
+            </ul>
+          )}
+        </Card>
+
+        <Card
+          title="Recent activity"
+          aside={
+            actor.kind === "staff" ? (
+              <Link href="/activity" className="text-accent hover:underline">
+                Full ledger
+              </Link>
+            ) : undefined
+          }
+        >
+          {recent.length === 0 ? (
+            <Empty>No one has recorded anything yet.</Empty>
+          ) : (
+            <ul className="grid gap-2">
+              {recent.map((f) => (
+                <li key={f.id} className="flex items-baseline gap-2 text-[12.5px]">
+                  <span className="shrink-0 font-mono text-[11px] text-muted">{fmtWhen.format(new Date(f.at))}</span>
+                  <span className="min-w-0">
+                    <span className="font-medium">{f.actorName}</span>{" "}
+                    <span className="text-muted">{(KIND_LABELS[f.kind as FactKind] ?? f.kind).toLowerCase()}</span> <RefLink refId={f.target} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
 
         <Card title="Deadlines">

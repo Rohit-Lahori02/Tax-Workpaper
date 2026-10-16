@@ -1,7 +1,10 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { sensitiveLiterals } from "@/lib/mask";
 import { getPacket } from "@/lib/packet/load";
-import { ACTOR_COOKIE, actorsFromPacket, defaultActorId, type Actor } from "@/lib/roles";
+import { ACTOR_COOKIE, actorsFromPacket, canViewSensitive, defaultActorId, type Actor } from "@/lib/roles";
+
+export const REVEAL_COOKIE = "wp_reveal";
 
 export function listActors(): Actor[] {
   return actorsFromPacket(getPacket().packet);
@@ -14,4 +17,28 @@ export async function getCurrentActor(): Promise<Actor> {
   const jar = await cookies();
   const id = jar.get(ACTOR_COOKIE)?.value;
   return actors.find((a) => a.id === id) ?? actors.find((a) => a.id === defaultActorId(packet)) ?? actors[0];
+}
+
+/**
+ * Sensitive data is masked for everyone by default. Cleared staff can switch
+ * unmasking on for a session; pages that then show it log the view.
+ */
+export async function getReveal(actor: Actor): Promise<boolean> {
+  if (!canViewSensitive(actor)) return false;
+  const jar = await cookies();
+  return jar.get(REVEAL_COOKIE)?.value === "1";
+}
+
+export interface Viewer {
+  actor: Actor;
+  /** True when sensitive values should render unmasked. */
+  reveal: boolean;
+  /** Literals to scrub from free text when masked. Empty when revealed. */
+  literals: string[];
+}
+
+export async function getViewer(): Promise<Viewer> {
+  const actor = await getCurrentActor();
+  const reveal = await getReveal(actor);
+  return { actor, reveal, literals: reveal ? [] : sensitiveLiterals(getPacket().packet) };
 }

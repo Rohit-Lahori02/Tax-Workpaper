@@ -3,9 +3,13 @@
 import { AlertTriangle, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Marks } from "@/components/facts/fact-marks";
+import { FactsPanel, type StaffOption } from "@/components/facts/facts-panel";
 import { Badge, cn, Empty, KV, SectionTitle } from "@/components/ui";
+import type { FactView, TargetSummary } from "@/lib/facts/types";
 import { fmtPct } from "@/lib/format";
 import type { Segment } from "@/lib/packet/pagemarks";
+import type { ActorLite } from "@/lib/permissions";
 import { lineHref } from "@/lib/refs";
 
 export interface ViewerValue {
@@ -36,16 +40,28 @@ export interface ViewerData {
   version: string;
 }
 
+export interface ViewerFactsContext {
+  actor: ActorLite;
+  staff: StaffOption[];
+  verificationTypes: string[];
+}
+
 const LOW_CONFIDENCE = 0.8;
 
 export function DocumentViewer({
   data,
   initialPage,
   initialValue,
+  facts,
+  summaries,
+  ctx,
 }: {
   data: ViewerData;
   initialPage: number;
   initialValue: string | null;
+  facts: Record<string, FactView[]>;
+  summaries: Record<string, TargetSummary>;
+  ctx: ViewerFactsContext;
 }) {
   const [page, setPage] = useState(initialPage);
   const [selected, setSelected] = useState<string | null>(initialValue);
@@ -86,19 +102,19 @@ export function DocumentViewer({
   const pagesInList = [...new Set(listed.map((v) => v.page))].sort((a, b) => a - b);
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[300px_1fr_300px]">
+    <div className="grid gap-4 xl:grid-cols-[300px_1fr_320px]">
       {/* Values list */}
       <section className="card flex max-h-[calc(100vh-10rem)] flex-col overflow-hidden">
         <div className="border-b border-border p-2">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder={"Filter " + data.values.length + " values"}
               aria-label="Filter extracted values"
               suppressHydrationWarning
-              className="h-8 w-full rounded-full border border-border bg-surface-2 pl-7 pr-2 text-[12px] outline-none focus:border-accent"
+              className="h-8 w-full rounded-full border border-border bg-surface-2 pl-8 pr-2 text-[12px] outline-none focus:border-accent"
             />
           </div>
         </div>
@@ -136,6 +152,7 @@ export function DocumentViewer({
                               </span>
                             ) : null}
                             {v.landsOn.length === 0 ? <span title="No return line cites this value">unused</span> : null}
+                            {summaries[v.id] ? <Marks s={summaries[v.id]} /> : null}
                           </div>
                         </div>
                         <div className="shrink-0 text-right">
@@ -156,14 +173,8 @@ export function DocumentViewer({
       {/* The page */}
       <section className="min-w-0">
         <div className="mb-2 flex items-center justify-between gap-2">
-          <div className="inline-flex items-center rounded-md border border-border bg-surface text-[12px]">
-            <button
-              type="button"
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="px-2 py-1 disabled:opacity-40"
-              aria-label="Previous page"
-            >
+          <div className="inline-flex items-center rounded-full border border-border bg-surface text-[12px]">
+            <button type="button" disabled={page <= 1} onClick={() => setPage(page - 1)} className="px-2 py-1 disabled:opacity-40" aria-label="Previous page">
               <ChevronLeft className="h-4 w-4" />
             </button>
             <span className="border-x border-border px-3 py-1 font-medium">
@@ -179,15 +190,9 @@ export function DocumentViewer({
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
-          <div className="text-[11px] text-muted">
-            {current ? current.segments.filter((s) => s.valueId).length : 0} fields located on this page
-          </div>
+          <div className="text-[11px] text-muted">{current ? current.segments.filter((s) => s.valueId).length : 0} fields located on this page</div>
         </div>
-        <div
-          ref={sheetRef}
-          className="card p-6 sm:p-8"
-          style={{ minHeight: "28rem" }}
-        >
+        <div ref={sheetRef} className="card p-6 sm:p-8" style={{ minHeight: "28rem" }}>
           <div className="mb-4 flex items-center justify-between border-b border-dashed border-border pb-2 text-[11px] uppercase tracking-wide text-muted">
             <span>Simulated page · {data.docId}</span>
             <span>
@@ -218,7 +223,7 @@ export function DocumentViewer({
         </div>
       </section>
 
-      {/* Selected value + position map */}
+      {/* Selected value, its evidence trail, and the position map */}
       <section className="grid content-start gap-4">
         <div className="card p-4">
           {sel ? (
@@ -230,13 +235,13 @@ export function DocumentViewer({
                 </div>
                 <Badge tone={sel.confidence < LOW_CONFIDENCE ? "warn" : "ok"}>{fmtPct(sel.confidence)}</Badge>
               </div>
-              <div className="my-3 text-2xl font-semibold tabular-nums tracking-tight">{sel.display}</div>
+              <div className="my-3 text-[26px] font-semibold leading-none tabular-nums tracking-tight">{sel.display}</div>
               {!sel.located ? (
                 <div className="mb-3 flex items-start gap-2 rounded-md bg-warn-soft px-2.5 py-2 text-[12px] text-warn">
                   <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <span>
-                    The pipeline read <span className="font-mono">{sel.textAsRead || "(nothing)"}</span>, which is not printed on this page.
-                    Treat this value as unverified.
+                    The pipeline read <span className="font-mono">{sel.textAsRead || "(nothing)"}</span>, which is not printed on this page. Treat
+                    this value as unverified.
                   </span>
                 </div>
               ) : null}
@@ -265,11 +270,20 @@ export function DocumentViewer({
               )}
             </>
           ) : (
-            <p className="text-[13px] text-muted">
-              Select a highlighted field on the page, or a value in the list, to see where it came from and where it went.
-            </p>
+            <p className="text-[13px] text-muted">Select a highlighted field on the page, or a value in the list, to see where it came from and where it went.</p>
           )}
         </div>
+
+        {sel ? (
+          <FactsPanel
+            target={sel.id}
+            facts={facts[sel.id] ?? []}
+            actor={ctx.actor}
+            staff={ctx.staff}
+            verificationTypes={ctx.verificationTypes}
+            title="Evidence on this value"
+          />
+        ) : null}
 
         <div className="card p-4">
           <SectionTitle>Position on page {page}</SectionTitle>

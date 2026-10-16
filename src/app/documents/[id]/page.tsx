@@ -2,18 +2,22 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DocumentViewer, type ViewerData, type ViewerValue } from "@/components/documents/document-viewer";
+import { FactsPanel } from "@/components/facts/facts-panel";
 import { PageHeader } from "@/components/page-header";
 import { RefLink } from "@/components/ref-link";
 import { Badge } from "@/components/ui";
+import { factsContext } from "@/lib/facts/context";
+import { getLedger } from "@/lib/facts/repo";
+import type { FactView, TargetSummary } from "@/lib/facts/types";
 import { fmtDateTime, fmtExtractedValue } from "@/lib/format";
-import { maskAccount, maskSsn, maskText, sensitiveLiterals } from "@/lib/mask";
+import { maskAccount, maskSsn, maskText } from "@/lib/mask";
 import { documentState, findReplacement } from "@/lib/packet/documents";
 import { getPacket } from "@/lib/packet/load";
 import { computeMarks, segmentText } from "@/lib/packet/pagemarks";
 import type { ExtractedValue } from "@/lib/packet/schema";
 import { documentHref } from "@/lib/refs";
-import { canViewSensitive } from "@/lib/roles";
-import { getCurrentActor } from "@/lib/session";
+import { logSensitiveView } from "@/lib/sensitive";
+import { getViewer } from "@/lib/session";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ page?: string; v?: string }> };
 
@@ -23,6 +27,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const doc = index.documents.get(id);
   return { title: doc ? id + " · " + doc.title : id };
 }
+
+const SENSITIVE_TYPES = new Set(["ssn", "account_number"]);
 
 function displayValue(v: ExtractedValue, reveal: boolean): string {
   if (!reveal && v.value !== null) {
@@ -47,9 +53,7 @@ export default async function DocumentPage({ params, searchParams }: Props) {
   const doc = index.documents.get(id);
   if (!doc) notFound();
 
-  const actor = await getCurrentActor();
-  const reveal = canViewSensitive(actor);
-  const literals = reveal ? [] : sensitiveLiterals(packet);
+  const [{ actor, reveal, literals }, { ledger }, ctx] = await Promise.all([getViewer(), getLedger(), factsContext()]);
   const version = index.latestVersion;
   const lineMap = index.lines.get(version)!;
   const usage = index.documentUsage.get(doc.id)!;
@@ -57,13 +61,19 @@ export default async function DocumentPage({ params, searchParams }: Props) {
   const replacement = findReplacement(doc, index);
   const values = index.valuesByDocument.get(doc.id) ?? [];
 
+  // Unmasked sensitive data on this page is logged, per firm standard.
+  if (reveal) {
+    const sensitiveIds = values.filter((v) => SENSITIVE_TYPES.has(v.value_type)).map((v) => v.id);
+    const allLiterals = Array.from(new Set([...packet.household.people.flatMap((p) => [p.ssn, p.ip_pin]).filter((x): x is string => Boolean(x))]));
+    const textHit = doc.pages.some((p) => allLiterals.some((lit) => p.printed_content.includes(lit)));
+    logSensitiveView(actor, "/documents/" + doc.id, [...sensitiveIds, ...(textHit ? ["page_text"] : [])]);
+  }
+
   // Locate each value's text on its page, on the same (possibly masked) text the viewer shows.
   const located = new Set<string>();
   const pages = doc.pages.map((p) => {
     const text = reveal ? p.printed_content : maskText(p.printed_content, literals);
-    const onPage = values
-      .filter((v) => v.page === p.page)
-      .map((v) => ({ id: v.id, text: textAsRead(v, reveal), position: v.position }));
+    const onPage = values.filter((v) => v.page === p.page).map((v) => ({ id: v.id, text: textAsRead(v, reveal), position: v.position }));
     const { marks } = computeMarks(text, onPage);
     for (const m of marks) located.add(m.valueId);
     return { page: p.page, segments: segmentText(text, marks) };
@@ -87,6 +97,16 @@ export default async function DocumentPage({ params, searchParams }: Props) {
         .filter((l) => l.version === version)
         .map((l) => ({ key: l.key, label: lineMap.get(l.key)?.label ?? "" })),
     }));
+
+  const facts: Record<string, FactView[]> = {};
+  const summaries: Record<string, TargetSummary> = {};
+  for (const v of values) {
+    const s = ledger.summary(v.id);
+    if (s.total) {
+      summaries[v.id] = s;
+      facts[v.id] = ledger.forTarget(v.id);
+    }
+  }
 
   const data: ViewerData = { docId: doc.id, pageCount: doc.page_count, pages, values: viewerValues, version };
   const initialValue = valueParam && viewerValues.some((v) => v.id === valueParam) ? valueParam : null;
@@ -127,10 +147,18 @@ export default async function DocumentPage({ params, searchParams }: Props) {
         }
         meta={
           <>
-            {state === "reached" ? <Badge tone="ok">feeds {linesReached.size} lines in {version}</Badge> : null}
-            {state === "unused" ? <Badge tone="warn">reaches no line in {version}</Badge> : null}
+            {state === "reached" ? (
+              <Badge tone="ok" dot>
+                feeds {linesReached.size} lines in {version}
+              </Badge>
+            ) : null}
+            {state === "unused" ? (
+              <Badge tone="warn" dot>
+                reaches no line in {version}
+              </Badge>
+            ) : null}
             {state === "superseded" ? (
-              <Badge tone="danger">
+              <Badge tone="danger" dot>
                 superseded in {usage.supersededIn.join(", ")}
                 {replacement ? (
                   <>
@@ -149,20 +177,30 @@ export default async function DocumentPage({ params, searchParams }: Props) {
             {doc.marked_corrected ? <Badge tone="warn">marked CORRECTED by issuer</Badge> : null}
             {unlocated ? <Badge tone="warn">{unlocated} values not found on page as read</Badge> : null}
             {!reveal ? <Badge>sensitive numbers masked</Badge> : null}
-            <span className="text-xs text-muted">
-              used in {usage.usedIn.length ? usage.usedIn.join(", ") : "no version"}
-            </span>
+            <span className="text-xs text-muted">used in {usage.usedIn.length ? usage.usedIn.join(", ") : "no version"}</span>
           </>
         }
         actions={
           replacement ? (
-            <Link href={documentHref(replacement.id)} className="rounded-md bg-accent px-3 py-1.5 text-[13px] font-medium text-accent-fg">
+            <Link href={documentHref(replacement.id)} className="pill primary">
               Open corrected version
             </Link>
           ) : null
         }
       />
-      <DocumentViewer data={data} initialPage={initialPage} initialValue={initialValue} />
+      <DocumentViewer data={data} initialPage={initialPage} initialValue={initialValue} facts={facts} summaries={summaries} ctx={ctx} />
+      <div className="mt-4 grid gap-4 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <FactsPanel
+            target={doc.id}
+            facts={ledger.forTarget(doc.id)}
+            actor={ctx.actor}
+            staff={ctx.staff}
+            verificationTypes={ctx.verificationTypes}
+            title="Evidence and review on this document"
+          />
+        </div>
+      </div>
     </>
   );
 }

@@ -1,0 +1,15 @@
+# Optional local database. Start with: docker compose up -d
+# Then set DATABASE_URL=postgresql://postgres:postgres@localhost:5432/workpaper in .env.local
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: workpaper
+    ports:
+      - "5432:5432"
+    volumes:
+      - workpaper-pg:/var/lib/postgresql/data
+volumes:
+  workpaper-pg:

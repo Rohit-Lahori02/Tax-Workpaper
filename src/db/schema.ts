@@ -1,4 +1,4 @@
-import { bigserial, index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { bigserial, index, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 /**
  * The ledger. Every fact a person adds to the workpaper is one row here and
@@ -14,7 +14,7 @@ export const facts = pgTable(
     seq: bigserial("seq", { mode: "number" }).notNull().unique(),
     /** packet.client_id, so one database can hold several engagements. */
     clientId: text("client_id").notNull(),
-    /** verification | adjustment | note | question | judgment | signoff | assignment | time | standard | sensitive_view ... */
+    /** verification | note | question | answer | attachment | retract | resolve | sensitive_view | ... */
     kind: text("kind").notNull(),
     actorId: text("actor_id").notNull(),
     at: timestamp("at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
@@ -28,8 +28,30 @@ export const facts = pgTable(
   (t) => [
     index("facts_client_target_idx").on(t.clientId, t.target),
     index("facts_client_seq_idx").on(t.clientId, t.seq),
+    index("facts_client_kind_idx").on(t.clientId, t.kind),
   ],
 );
 
 export type Fact = typeof facts.$inferSelect;
 export type NewFact = typeof facts.$inferInsert;
+
+/**
+ * Files attached as evidence. Stored in the database so the app has no disk
+ * dependency on serverless hosts; the size cap is enforced in the action.
+ */
+export const blobs = pgTable(
+  "blobs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clientId: text("client_id").notNull(),
+    actorId: text("actor_id").notNull(),
+    at: timestamp("at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    name: text("name").notNull(),
+    mime: text("mime").notNull(),
+    size: integer("size").notNull(),
+    dataBase64: text("data_base64").notNull(),
+  },
+  (t) => [index("blobs_client_idx").on(t.clientId)],
+);
+
+export type Blob = typeof blobs.$inferSelect;

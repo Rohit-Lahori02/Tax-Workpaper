@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, Files, FileSpreadsheet, LayoutDashboard, ShieldCheck } from "lucide-react";
+import { CalendarClock, Files, FileSpreadsheet, History, LayoutDashboard, MessageCircleQuestion, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/components/ui";
@@ -15,18 +15,31 @@ export interface SidebarClient {
   warnings: number;
 }
 
-export const NAV = [
-  { href: "/", label: "Overview", icon: LayoutDashboard, exact: true },
-  { href: "/return", label: "Return", icon: FileSpreadsheet, exact: false },
-  { href: "/documents", label: "Documents", icon: Files, exact: false },
+const NAV = [
+  { href: "/", label: "Overview", icon: LayoutDashboard, exact: true, ledger: false },
+  { href: "/return", label: "Return", icon: FileSpreadsheet, exact: false, ledger: false },
+  { href: "/documents", label: "Documents", icon: Files, exact: false, ledger: false },
+  { href: "/questions", label: "Questions", icon: MessageCircleQuestion, exact: false, ledger: false },
+  { href: "/activity", label: "Activity", icon: History, exact: false, ledger: true },
 ] as const;
 
 export function isActive(pathname: string, href: string, exact: boolean) {
   return exact ? pathname === href : pathname === href || pathname.startsWith(href + "/");
 }
 
-export function Sidebar({ firm, client }: { firm: string; client: SidebarClient }) {
+export function Sidebar({
+  firm,
+  client,
+  showLedger,
+  openQuestions,
+}: {
+  firm: string;
+  client: SidebarClient;
+  showLedger: boolean;
+  openQuestions: number;
+}) {
   const pathname = usePathname();
+  const items = NAV.filter((n) => showLedger || !n.ledger);
   return (
     <aside className="sticky top-0 hidden h-screen w-[236px] shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
       <div className="flex items-center gap-2.5 px-4 pb-4 pt-4">
@@ -43,7 +56,7 @@ export function Sidebar({ firm, client }: { firm: string; client: SidebarClient 
       </div>
 
       <nav className="flex flex-col gap-px px-2">
-        {NAV.map((item) => {
+        {items.map((item) => {
           const active = isActive(pathname, item.href, item.exact);
           const Icon = item.icon;
           return (
@@ -57,6 +70,9 @@ export function Sidebar({ firm, client }: { firm: string; client: SidebarClient 
             >
               <Icon className={cn("h-4 w-4", active ? "text-accent" : "")} strokeWidth={1.75} />
               {item.label}
+              {item.href === "/questions" && openQuestions > 0 ? (
+                <span className="ml-auto rounded-full bg-accent px-1.5 text-[10px] font-semibold leading-4 text-accent-fg">{openQuestions}</span>
+              ) : null}
             </Link>
           );
         })}

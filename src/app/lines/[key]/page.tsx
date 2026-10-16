@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Marks } from "@/components/facts/fact-marks";
+import { FactsPanel } from "@/components/facts/facts-panel";
 import { BuildTree } from "@/components/lines/build-tree";
 import { PageHeader } from "@/components/page-header";
 import { RefLink } from "@/components/ref-link";
 import { VersionSwitch } from "@/components/return/version-switch";
 import { Badge, Card, Empty, KV, SectionTitle } from "@/components/ui";
+import { factsContext } from "@/lib/facts/context";
+import { getLedger } from "@/lib/facts/repo";
 import { formLabel, formShort } from "@/lib/forms";
 import { fmtExtractedValue, fmtLineValue, fmtPct } from "@/lib/format";
 import { getPacket } from "@/lib/packet/load";
@@ -30,10 +34,12 @@ export default async function LinePage({ params, searchParams }: Props) {
   const priorYear = index.priorYearLines.get(key) ?? null;
   if (presentIn.length === 0 && !priorYear) notFound();
 
+  const [{ ledger }, ctx] = await Promise.all([getLedger(), factsContext()]);
   const version = v && presentIn.includes(v) ? v : presentIn[presentIn.length - 1];
   const line = version ? index.lines.get(version)!.get(key)! : null;
   const dependents = version ? (index.dependents.get(version)?.get(key) ?? []) : [];
   const lineMap = version ? index.lines.get(version) : undefined;
+  const summary = ledger.summary(key);
 
   // Sources grouped by document.
   const byDoc = new Map<string, { document: PacketDocument | null; values: ExtractedValue[] }>();
@@ -90,12 +96,17 @@ export default async function LinePage({ params, searchParams }: Props) {
         meta={
           line ? (
             <>
-              <span className="text-2xl font-semibold tabular-nums tracking-tight">{fmtLineValue(line.value)}</span>
+              <span className="text-[26px] font-semibold leading-none tabular-nums tracking-tight">{fmtLineValue(line.value)}</span>
               <Badge tone="accent" mono>
                 {line.rule}
               </Badge>
               <Badge className="capitalize">{line.jurisdiction}</Badge>
-              {vr?.flagged ? <Badge tone="warn">swing vs 2024: {(vr.diff > 0 ? "+" : "") + fmtLineValue(vr.diff)}</Badge> : null}
+              {vr?.flagged ? (
+                <Badge tone="warn" dot>
+                  swing vs 2024: {(vr.diff > 0 ? "+" : "") + fmtLineValue(vr.diff)}
+                </Badge>
+              ) : null}
+              <Marks s={summary} />
               {line.note ? <span className="text-xs text-muted">{line.note}</span> : null}
             </>
           ) : null
@@ -108,7 +119,7 @@ export default async function LinePage({ params, searchParams }: Props) {
       />
 
       <div className="grid gap-4 xl:grid-cols-3">
-        <div className="grid gap-4 xl:col-span-2">
+        <div className="grid content-start gap-4 xl:col-span-2">
           <Card title="How this number is built" description="Expand any input to keep walking down. Lines with sources come straight from documents.">
             {line ? <BuildTree rootKey={key} version={version} index={index} /> : <Empty>No computation for a prior-year-only line.</Empty>}
           </Card>
@@ -135,7 +146,7 @@ export default async function LinePage({ params, searchParams }: Props) {
                       {g.document?.marked_corrected ? <Badge tone="warn">CORRECTED</Badge> : null}
                       {g.document && index.documentUsage.get(docId)?.supersededIn.length ? <Badge tone="danger">superseded</Badge> : null}
                     </div>
-                    <table className="tbl">
+                    <table className="tbl dense">
                       <tbody>
                         {g.values.map((val) => (
                           <tr key={val.id}>
@@ -147,6 +158,9 @@ export default async function LinePage({ params, searchParams }: Props) {
                             <td className="num font-medium">{fmtExtractedValue(val.value)}</td>
                             <td className="num w-20">
                               <span className={val.confidence < 0.8 ? "text-warn" : "text-muted"}>{fmtPct(val.confidence)}</span>
+                            </td>
+                            <td className="w-16">
+                              <Marks s={ledger.summary(val.id)} />
                             </td>
                           </tr>
                         ))}
@@ -172,8 +186,16 @@ export default async function LinePage({ params, searchParams }: Props) {
         </div>
 
         <div className="grid content-start gap-4">
+          <FactsPanel
+            target={key}
+            facts={ledger.forTarget(key)}
+            actor={ctx.actor}
+            staff={ctx.staff}
+            verificationTypes={ctx.verificationTypes}
+          />
+
           <Card title="Across versions" flush>
-            <table className="tbl">
+            <table className="tbl dense">
               <tbody>
                 {priorYear ? (
                   <tr>
@@ -211,7 +233,11 @@ export default async function LinePage({ params, searchParams }: Props) {
                       <span className="font-medium">{ver}</span> <span className="text-muted">{change!.change}</span>
                     </span>
                     <span className="font-mono text-xs tabular-nums">
-                      {change!.change === "added" ? String(change!.new) : change!.change === "removed" ? String(change!.old) : String(change!.old) + " → " + String(change!.new)}
+                      {change!.change === "added"
+                        ? String(change!.new)
+                        : change!.change === "removed"
+                          ? String(change!.old)
+                          : String(change!.old) + " → " + String(change!.new)}
                     </span>
                   </li>
                 ))}

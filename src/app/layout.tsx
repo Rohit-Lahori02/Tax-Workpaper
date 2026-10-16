@@ -1,5 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import type { Metadata } from "next";
+import Script from "next/script";
 import type { ReactNode } from "react";
 import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
@@ -38,10 +39,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body className="min-h-full">
+        <Script id="wp-theme" strategy="beforeInteractive">
+          {themeScript}
+        </Script>
         <div className="flex min-h-screen">
           <Sidebar
             firm={packet.firm.name}

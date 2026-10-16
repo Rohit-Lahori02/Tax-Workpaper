@@ -1,4 +1,4 @@
-import { CheckCircle2, MessageCircleQuestion, OctagonAlert, Paperclip, PencilLine, StickyNote } from "lucide-react";
+import { CheckCircle2, Gavel, MessageCircleQuestion, OctagonAlert, Paperclip, PencilLine, StickyNote } from "lucide-react";
 import { cn } from "@/components/ui";
 import type { TargetSummary } from "@/lib/facts/types";
 
@@ -11,6 +11,11 @@ export function Marks({ s, className }: { s: TargetSummary; className?: string }
       {s.adjustments ? (
         <span className="inline-flex items-center text-accent" title={s.adjustments + " adjustment(s)"}>
           <PencilLine className="h-3.5 w-3.5" />
+        </span>
+      ) : null}
+      {s.judgments ? (
+        <span className="inline-flex items-center text-ok" title={s.judgments + " judgment record(s)"}>
+          <Gavel className="h-3.5 w-3.5" />
         </span>
       ) : null}
       {s.verifications.length ? (

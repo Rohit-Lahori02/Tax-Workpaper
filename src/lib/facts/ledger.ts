@@ -17,6 +17,8 @@ export interface Ledger {
   summary(target: string): TargetSummary;
   /** Facts for a target, newest first, control facts folded into their parents. */
   forTarget(target: string): FactView[];
+  /** The newest live fact of a kind on a target, or null. */
+  latest(target: string, kind: string): FactView | null;
 }
 
 const CONTROL_KINDS = new Set(["retract", "resolve", "answer", "seen"]);
@@ -75,6 +77,7 @@ export function buildLedger(rows: Fact[], actors: Actor[]): Ledger {
       if (f.kind === "question" && f.answers.filter((a) => !a.retracted).length === 0) s.openQuestions += 1;
       if (f.kind === "attachment") s.attachments += 1;
       if (f.kind === "adjustment") s.adjustments += 1;
+      if (f.kind === "judgment") s.judgments += 1;
     }
     summaries.set(target, s);
     return s;
@@ -83,6 +86,14 @@ export function buildLedger(rows: Fact[], actors: Actor[]): Ledger {
   const forTarget = (target: string): FactView[] =>
     (byTarget.get(target) ?? []).filter((f) => !CONTROL_KINDS.has(f.kind) && f.kind !== "sensitive_view").slice().reverse();
 
+  const latest = (target: string, kind: string): FactView | null => {
+    const list = byTarget.get(target) ?? [];
+    for (let i = list.length - 1; i >= 0; i--) {
+      if (list[i].kind === kind && !list[i].retracted) return list[i];
+    }
+    return null;
+  };
+
   return {
     all,
     byId,
@@ -90,5 +101,6 @@ export function buildLedger(rows: Fact[], actors: Actor[]): Ledger {
     questions: all.filter((f) => f.kind === "question"),
     summary,
     forTarget,
+    latest,
   };
 }

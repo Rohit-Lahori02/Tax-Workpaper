@@ -12,6 +12,9 @@ export const FACT_KINDS = [
   "sensitive_view",
   "adjustment",
   "seen",
+  "judgment",
+  "disposition",
+  "step",
 ] as const;
 export type FactKind = (typeof FACT_KINDS)[number];
 
@@ -26,6 +29,43 @@ export const KIND_LABELS: Record<FactKind, string> = {
   sensitive_view: "Viewed sensitive data",
   adjustment: "Adjusted",
   seen: "Caught up",
+  judgment: "Judgment recorded",
+  disposition: "Document disposition",
+  step: "Required step",
+};
+
+export const JUDGMENT_TYPES = [
+  "variance",
+  "judgment_call",
+  "election",
+  "due_diligence",
+  "penalty",
+  "outside_filing",
+  "area_review",
+  "diagnostic",
+] as const;
+export type JudgmentType = (typeof JUDGMENT_TYPES)[number];
+
+export const JUDGMENT_LABELS: Record<JudgmentType, string> = {
+  variance: "Variance explained",
+  judgment_call: "Judgment call",
+  election: "Election",
+  due_diligence: "Due diligence",
+  penalty: "Penalty decision",
+  outside_filing: "Outside filing",
+  area_review: "Area considered",
+  diagnostic: "Diagnostic resolved",
+};
+
+/** Document dispositions for files that reach no line of the return. */
+export const DISPOSITIONS = ["duplicate", "not_relevant", "reference_only", "used_elsewhere", "pending"] as const;
+export type Disposition = (typeof DISPOSITIONS)[number];
+export const DISPOSITION_LABELS: Record<Disposition, string> = {
+  duplicate: "Duplicate of another document",
+  not_relevant: "Not relevant to this return",
+  reference_only: "Reference only (identity, engagement, agency record)",
+  used_elsewhere: "Used outside the computed return",
+  pending: "Still to be dealt with",
 };
 
 const text = z.string().trim().min(1, "Say something").max(4000, "Keep it under 4,000 characters");
@@ -83,6 +123,32 @@ export const AdjustmentBody = z.object({
 export const SeenBody = z.object({ seq: z.number().int().nonnegative() });
 export type AdjustmentBody = z.infer<typeof AdjustmentBody>;
 
+export const JudgmentBody = z.object({
+  type: z.enum(JUDGMENT_TYPES),
+  text,
+  /** Required for judgment calls and elections by firm rule. */
+  authority: z.string().trim().max(400).optional(),
+  /** The option chosen, when the decision has named options. */
+  choice: z.string().trim().max(200).optional(),
+  /** Checklist answers for due diligence. */
+  answers: z.array(z.boolean()).optional(),
+  /** Status word for outside filings: informed, referred, filed, not_required. */
+  status: z.string().trim().max(60).optional(),
+});
+export type JudgmentBody = z.infer<typeof JudgmentBody>;
+
+export const DispositionBody = z.object({
+  disposition: z.enum(DISPOSITIONS),
+  text: z.string().trim().max(4000).optional(),
+});
+export type DispositionBody = z.infer<typeof DispositionBody>;
+
+export const StepBody = z.object({
+  done: z.boolean(),
+  text: z.string().trim().max(4000).optional(),
+});
+export type StepBody = z.infer<typeof StepBody>;
+
 export type VerificationBody = z.infer<typeof VerificationBody>;
 export type NoteBody = z.infer<typeof NoteBody>;
 export type QuestionBody = z.infer<typeof QuestionBody>;
@@ -119,6 +185,7 @@ export interface TargetSummary {
   openQuestions: number;
   attachments: number;
   adjustments: number;
+  judgments: number;
   /** Any non-control fact at all, retracted ones excluded. */
   total: number;
 }
@@ -130,5 +197,6 @@ export const EMPTY_SUMMARY: TargetSummary = {
   openQuestions: 0,
   attachments: 0,
   adjustments: 0,
+  judgments: 0,
   total: 0,
 };

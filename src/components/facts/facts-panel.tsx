@@ -1,8 +1,9 @@
 "use client";
 
-import { CheckCircle2, MessageCircleQuestion, OctagonAlert, Paperclip, PencilLine, StickyNote, Undo2 } from "lucide-react";
+import { CheckCircle2, FileCheck2, Gavel, ListChecks, MessageCircleQuestion, OctagonAlert, Paperclip, PencilLine, StickyNote, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { hrefFor } from "@/lib/refs";
+import { DISPOSITION_LABELS, JUDGMENT_LABELS, type Disposition, type JudgmentType } from "@/lib/facts/types";
 import { useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { humanize } from "@/components/facts/fact-marks";
 import { Badge, cn, Empty } from "@/components/ui";
@@ -237,6 +238,35 @@ function FactItem({ f, actor, staff }: { f: FactView; actor: ActorLite; staff: S
                   {typeof f.body.whatIf === "string" ? <span>what-if {f.body.whatIf}</span> : null}
                   <span>based on {String(f.body.basedOn ?? "")}</span>
                 </div>
+              </div>
+            ) : null}
+            {f.kind === "judgment" ? (
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge tone="ok">
+                    <Gavel className="h-3 w-3" /> {JUDGMENT_LABELS[f.body.type as JudgmentType] ?? "Judgment"}
+                  </Badge>
+                  {typeof f.body.choice === "string" ? <span className="text-[12px] text-muted">chose: {f.body.choice}</span> : null}
+                  {typeof f.body.status === "string" ? <Badge tone="accent">{f.body.status.replace(/_/g, " ")}</Badge> : null}
+                </div>
+                <p className="mt-1 whitespace-pre-wrap">{String(f.body.text ?? "")}</p>
+                {typeof f.body.authority === "string" && f.body.authority ? <p className="mt-0.5 text-[12px] text-muted">Authority: {f.body.authority}</p> : null}
+              </div>
+            ) : null}
+            {f.kind === "disposition" ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge tone="neutral">
+                  <FileCheck2 className="h-3 w-3" /> {DISPOSITION_LABELS[f.body.disposition as Disposition] ?? String(f.body.disposition)}
+                </Badge>
+                {typeof f.body.text === "string" && f.body.text ? <span className="text-muted">{f.body.text}</span> : null}
+              </div>
+            ) : null}
+            {f.kind === "step" ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge tone={f.body.done === true ? "ok" : "warn"}>
+                  <ListChecks className="h-3 w-3" /> {f.body.done === true ? "step completed" : "step reopened"}
+                </Badge>
+                {typeof f.body.text === "string" && f.body.text ? <span className="text-muted">{f.body.text}</span> : null}
               </div>
             ) : null}
             {f.kind === "attachment" ? (

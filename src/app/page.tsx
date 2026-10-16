@@ -8,6 +8,7 @@ import { filingStatusLabel, fmtBalance, fmtDate, fmtDateTime, fmtMoney, fmtNumbe
 import { maskPin, maskSsn } from "@/lib/mask";
 import { EffectBadge } from "@/components/checks/finding-row";
 import { runChecks } from "@/lib/checks/run";
+import { decisionPoints, documentAccounting, dueDiligenceItems, requiredSteps, varianceItems } from "@/lib/completeness";
 import { effectiveReturn } from "@/lib/effective";
 import { getLedger } from "@/lib/facts/repo";
 import { KIND_LABELS, type FactKind } from "@/lib/facts/types";
@@ -58,6 +59,15 @@ export default async function OverviewPage() {
   const warnings = latest.diagnostics.filter((d) => d.severity === "warning");
   const infos = latest.diagnostics.filter((d) => d.severity === "info");
   const checks = runChecks(packet, index);
+  const steps = requiredSteps(packet, index, ledger, {
+    variances: varianceItems(packet, index, ledger, eff),
+    dueDiligence: dueDiligenceItems(packet, index, ledger),
+    decisions: decisionPoints(packet, index, ledger),
+    documents: documentAccounting(index, ledger),
+    checks,
+  });
+  const activeSteps = steps.filter((s) => s.auto !== "later");
+  const stepsDone = activeSteps.filter((s) => s.done).length;
   const topErrors = checks.findings
     .filter((f) => f.severity === "error")
     .sort((a, b) => Math.abs((b.effect?.federal ?? 0) + (b.effect?.california ?? 0)) - Math.abs((a.effect?.federal ?? 0) + (a.effect?.california ?? 0)))
@@ -244,6 +254,30 @@ export default async function OverviewPage() {
               ]}
             />
           </div>
+        </Card>
+
+        <Card
+          title="Required steps"
+          description={stepsDone + " of " + activeSteps.length + " done; " + (steps.length - activeSteps.length) + " come with the review workflow."}
+          aside={
+            <Link href="/completeness" className="text-accent hover:underline">
+              Completeness
+            </Link>
+          }
+        >
+          <div className="mb-3 flex h-2 overflow-hidden rounded-full bg-surface-2">
+            <div className="bg-ok" style={{ width: (stepsDone / Math.max(1, activeSteps.length)) * 100 + "%" }} />
+          </div>
+          <ol className="grid gap-1.5 text-[12.5px]">
+            {steps.map((s) => (
+              <li key={s.index} className="flex items-center gap-2">
+                <span className={"h-2 w-2 shrink-0 rounded-full " + (s.auto === "later" ? "bg-border" : s.done ? "bg-ok" : s.auto === "blocked" ? "bg-danger" : "bg-warn")} />
+                <Link href={s.href ?? "/completeness"} className={"truncate hover:underline " + (s.auto === "later" ? "text-muted" : "")}>
+                  {s.label}
+                </Link>
+              </li>
+            ))}
+          </ol>
         </Card>
 
         <Card

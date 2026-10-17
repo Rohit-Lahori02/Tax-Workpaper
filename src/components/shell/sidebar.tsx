@@ -5,6 +5,7 @@ import {
   BookOpen,
   Building2,
   CalendarClock,
+  Activity,
   CalendarRange,
   ClipboardCheck,
   Clock,
@@ -23,7 +24,9 @@ import {
   Map,
   MessageCircleQuestion,
   PenLine,
+  Search,
   Send,
+  Settings2,
   ShieldCheck,
   TrendingUp,
 } from "lucide-react";
@@ -82,6 +85,14 @@ const SECTIONS: { label: string | null; items: Item[] }[] = [
       { href: "/assets", label: "Depreciation", icon: Building2 },
       { href: "/books", label: "Books to tax", icon: BookOpen },
       { href: "/state", label: "California split", icon: Map },
+    ],
+  },
+  {
+    label: "Firm",
+    items: [
+      { href: "/status", label: "Status", icon: Activity, ledger: true },
+      { href: "/standards", label: "Standards", icon: Settings2, ledger: true },
+      { href: "/search", label: "Search", icon: Search },
     ],
   },
   {

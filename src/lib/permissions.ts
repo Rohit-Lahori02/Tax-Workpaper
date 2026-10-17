@@ -38,3 +38,6 @@ export const canAmend = (a: ActorLite) => a.kind === "staff" && REVIEW_ROLES.has
 export const canCorrectIdentity = (a: ActorLite) => a.kind === "staff" && PREP_ROLES.has(a.role);
 export const canRespondToNotice = (a: ActorLite) => a.kind === "staff" && PREP_ROLES.has(a.role);
 export const canRollForward = (a: ActorLite) => a.kind === "staff" && PREP_ROLES.has(a.role);
+/** Firm standards are the firm administrator's and the partners' to change. */
+export const canEditStandards = (a: ActorLite) => a.kind === "staff" && (a.role === "firm_administrator" || a.role === "partner");
+export const canLogTime = (a: ActorLite) => a.kind === "staff";

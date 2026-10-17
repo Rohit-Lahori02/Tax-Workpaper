@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { activeAdjustments, CATEGORIES, categoryFor, effectFor, requiresPartner, type EffectCategory } from "@/lib/effective";
-import { getPacket } from "@/lib/packet/load";
+import { getEffectivePacket } from "@/lib/standards-server";
 import { canAdjust, canUndoBatch, canVerify } from "@/lib/permissions";
 import { getCurrentActor } from "@/lib/session";
 import type { ActionResult } from "./actions";
@@ -43,7 +43,7 @@ export async function adjustAction(fd: FormData): Promise<ActionResult> {
     if (!canAdjust(actor)) return bad("Your role cannot adjust the return.");
     const frozen = await frozenMessage();
     if (frozen) return bad(frozen);
-    const { packet, index } = getPacket();
+    const { packet, index } = await getEffectivePacket();
     const versionId = index.latestVersion;
     const version = index.versions.get(versionId)!;
     const target = Target.parse(str(fd, "target"));
@@ -78,7 +78,7 @@ export async function bulkVerifyAction(fd: FormData): Promise<ActionResult> {
   return guarded(async () => {
     const actor = await getCurrentActor();
     if (!canVerify(actor)) return bad("Your role cannot record verifications.");
-    const { packet } = getPacket();
+    const { packet } = await getEffectivePacket();
     let keys: unknown;
     try {
       keys = JSON.parse(str(fd, "keys"));
@@ -124,7 +124,7 @@ export async function adoptWhatIfAction(fd: FormData): Promise<ActionResult> {
     if (!canAdjust(actor)) return bad("Your role cannot adjust the return.");
     const frozen = await frozenMessage();
     if (frozen) return bad(frozen);
-    const { packet, index } = getPacket();
+    const { packet, index } = await getEffectivePacket();
     const id = str(fd, "id");
     const alt = packet.what_if.alternatives.find((a) => a.id === id);
     if (!alt) return bad("Unknown what-if.");

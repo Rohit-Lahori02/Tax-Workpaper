@@ -15,7 +15,7 @@ import { factsContext } from "@/lib/facts/context";
 import { getLedger } from "@/lib/facts/repo";
 import { formLabel, formShort } from "@/lib/forms";
 import { fmtExtractedValue, fmtLineValue, fmtPct } from "@/lib/format";
-import { getPacket } from "@/lib/packet/load";
+import { getEffectivePacket } from "@/lib/standards-server";
 import type { ExtractedValue, PacketDocument } from "@/lib/packet/schema";
 import { documentHref, lineHref, parseRef } from "@/lib/refs";
 import { variance } from "@/lib/variance";
@@ -31,7 +31,7 @@ export default async function LinePage({ params, searchParams }: Props) {
   const { key: rawKey } = await params;
   const { v, adjust, reason, from } = await searchParams;
   const key = decodeURIComponent(rawKey);
-  const { packet, index } = getPacket();
+  const { packet, index } = await getEffectivePacket();
 
   const presentIn = index.versionOrder.filter((ver) => index.lines.get(ver)?.has(key));
   const priorYear = index.priorYearLines.get(key) ?? null;

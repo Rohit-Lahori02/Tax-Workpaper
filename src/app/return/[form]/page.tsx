@@ -13,7 +13,7 @@ import { factsContext } from "@/lib/facts/context";
 import { getLedger } from "@/lib/facts/repo";
 import { formLabel, formShort } from "@/lib/forms";
 import { fmtLineValue, fmtMoney, fmtPct } from "@/lib/format";
-import { getPacket } from "@/lib/packet/load";
+import { getEffectivePacket } from "@/lib/standards-server";
 import { canVerify } from "@/lib/permissions";
 import { lineHref } from "@/lib/refs";
 import { variance } from "@/lib/variance";
@@ -29,7 +29,7 @@ export default async function FormPage({ params, searchParams }: Props) {
   const { form: rawForm } = await params;
   const { v } = await searchParams;
   const form = decodeURIComponent(rawForm);
-  const { packet, index } = getPacket();
+  const { packet, index } = await getEffectivePacket();
   const working = v === "working";
   const version = !working && v && index.versions.has(v) ? v : index.latestVersion;
   const all = [...(index.lines.get(version)?.values() ?? [])];

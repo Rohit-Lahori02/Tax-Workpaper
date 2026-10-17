@@ -101,6 +101,8 @@ export function effectFromRates(category: EffectCategory, delta: number, rates: 
 
 /** The dollar threshold in the firm's "requires partner sign-off" rule. */
 export function partnerThreshold(packet: Packet): number {
+  const explicit = (packet.firm.starter_standards as Record<string, unknown>).partner_threshold;
+  if (typeof explicit === "number") return explicit;
   const rule = packet.firm.starter_standards.rules.find((r) => /partner sign-off/i.test(r));
   const m = rule ? /over ([\d,]+)/.exec(rule) : null;
   return m ? Number(m[1].replace(/,/g, "")) : 1000;

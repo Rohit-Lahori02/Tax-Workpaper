@@ -8,7 +8,7 @@ import { runChecks } from "@/lib/checks/run";
 import { AREA_LABELS, type Area, type Severity } from "@/lib/checks/types";
 import { getLedger } from "@/lib/facts/repo";
 import { fmtMoney } from "@/lib/format";
-import { getPacket } from "@/lib/packet/load";
+import { getEffectivePacket } from "@/lib/standards-server";
 
 export const metadata: Metadata = { title: "Checks" };
 
@@ -16,7 +16,7 @@ type Props = { searchParams: Promise<{ severity?: string; area?: string }> };
 
 export default async function ChecksPage({ searchParams }: Props) {
   const { severity, area } = await searchParams;
-  const { packet, index } = getPacket();
+  const { packet, index } = await getEffectivePacket();
   const { ledger } = await getLedger();
   const run = runChecks(packet, index);
 

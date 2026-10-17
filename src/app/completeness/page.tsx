@@ -14,7 +14,7 @@ import { factsContext } from "@/lib/facts/context";
 import { getLedger } from "@/lib/facts/repo";
 import type { Disposition, FactView } from "@/lib/facts/types";
 import { fmtDate } from "@/lib/format";
-import { getPacket } from "@/lib/packet/load";
+import { getEffectivePacket } from "@/lib/standards-server";
 import { canNote, canVerify } from "@/lib/permissions";
 import { documentHref } from "@/lib/refs";
 
@@ -39,7 +39,7 @@ const FILING_STATUSES = [
 ];
 
 export default async function CompletenessPage() {
-  const { packet, index } = getPacket();
+  const { packet, index } = await getEffectivePacket();
   const [{ ledger }, ctx] = await Promise.all([getLedger(), factsContext()]);
   const checks = runChecks(packet, index);
   const eff = effectiveReturn(packet, index, ledger);

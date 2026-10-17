@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { getPacket } from "@/lib/packet/load";
+import { getEffectivePacket } from "@/lib/standards-server";
 import {
   canAnswer,
   canAsk,
@@ -52,7 +53,7 @@ export async function verifyAction(fd: FormData): Promise<ActionResult> {
   return guarded(async () => {
     const actor = await getCurrentActor();
     if (!canVerify(actor)) return bad("Your role cannot record verifications.");
-    const { packet } = getPacket();
+    const { packet } = await getEffectivePacket();
     const target = Target.parse(str(fd, "target"));
     const body = VerificationBody.parse({ type: str(fd, "type"), note: str(fd, "note") || undefined });
     if (!packet.firm.starter_standards.verification_types.includes(body.type)) return bad("Unknown verification type.");

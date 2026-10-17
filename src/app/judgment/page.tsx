@@ -11,7 +11,7 @@ import { getLedger } from "@/lib/facts/repo";
 import type { FactView } from "@/lib/facts/types";
 import { formShort } from "@/lib/forms";
 import { fmtLineValue, fmtMoney, fmtPct } from "@/lib/format";
-import { getPacket } from "@/lib/packet/load";
+import { getEffectivePacket } from "@/lib/standards-server";
 import { canVerify } from "@/lib/permissions";
 import { lineHref } from "@/lib/refs";
 
@@ -33,7 +33,7 @@ export function recorded(f: FactView | null): RecordedJudgment | null {
 const signed = (n: number | null) => (n === null ? "—" : n === 0 ? "no change" : (n > 0 ? "+" : "−") + fmtMoney(Math.abs(n)));
 
 export default async function JudgmentPage() {
-  const { packet, index } = getPacket();
+  const { packet, index } = await getEffectivePacket();
   const [{ ledger }, ctx] = await Promise.all([getLedger(), factsContext()]);
   const allowed = canVerify(ctx.actor);
   const eff = effectiveReturn(packet, index, ledger);

@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Kbd } from "@/components/ui";
-import { hrefFor } from "@/lib/refs";
+import { hrefFor, parseRef } from "@/lib/refs";
 
 export function LookupBox({ className }: { className?: string }) {
   const router = useRouter();
@@ -30,7 +30,8 @@ export function LookupBox({ className }: { className?: string }) {
         e.preventDefault();
         const t = q.trim();
         if (t) {
-          router.push(hrefFor(t));
+          // A reference jumps straight to its record; anything else is a search.
+          router.push(parseRef(t).kind === "unknown" || /\s/.test(t) ? "/search?q=" + encodeURIComponent(t) : hrefFor(t));
           setQ("");
           ref.current?.blur();
         }
@@ -42,8 +43,8 @@ export function LookupBox({ className }: { className?: string }) {
         value={q}
         onChange={(e) => setQ(e.target.value)}
         suppressHydrationWarning
-        placeholder="Jump to anything: F1040.11, ev-0703, D30, qa-14"
-        aria-label="Jump to a packet reference"
+        placeholder="Search the file, or jump to F1040.11, ev-0703, D30, qa-14"
+        aria-label="Search the file or jump to a reference"
         className="h-8 w-full rounded-full border border-border bg-surface pl-9 pr-9 text-[12.5px] outline-none placeholder:text-muted focus:border-accent"
       />
       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">

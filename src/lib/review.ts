@@ -6,7 +6,7 @@ import { effectiveReturn, type EffectiveReturn } from "@/lib/effective";
 import type { Ledger } from "@/lib/facts/ledger";
 import { getLedger } from "@/lib/facts/repo";
 import type { PacketIndex } from "@/lib/packet/index";
-import { getPacket } from "@/lib/packet/load";
+import { getEffectivePacket } from "@/lib/standards-server";
 import type { Packet } from "@/lib/packet/schema";
 import type { Actor } from "@/lib/roles";
 import { filingState, identityMismatches, type FilingState, type IdentityMismatch } from "@/lib/season";
@@ -50,7 +50,7 @@ export interface ReviewContext {
 
 /** Everything the review pages and actions need, computed once per request. */
 export const getReviewContext = cache(async (): Promise<ReviewContext> => {
-  const { packet, index } = getPacket();
+  const { packet, index } = await getEffectivePacket();
   const { ledger } = await getLedger();
   const checks = runChecks(packet, index);
   const eff = effectiveReturn(packet, index, ledger);

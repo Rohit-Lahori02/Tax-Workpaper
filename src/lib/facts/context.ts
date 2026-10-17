@@ -1,5 +1,5 @@
 import "server-only";
-import { getPacket } from "@/lib/packet/load";
+import { getEffectivePacket } from "@/lib/standards-server";
 import type { ActorLite } from "@/lib/permissions";
 import { getCurrentActor } from "@/lib/session";
 import type { StaffOption } from "@/components/facts/facts-panel";
@@ -12,7 +12,7 @@ export interface FactsContext {
 
 /** Everything a FactsPanel needs besides the facts themselves. */
 export async function factsContext(): Promise<FactsContext> {
-  const { packet } = getPacket();
+  const { packet } = await getEffectivePacket();
   const a = await getCurrentActor();
   return {
     actor: { id: a.id, name: a.name, role: a.role, kind: a.kind },

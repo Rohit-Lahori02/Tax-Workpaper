@@ -27,7 +27,7 @@ export interface Scope {
   other: string[];
 }
 
-const EXCLUDED_FROM_HASH = new Set(["signoff", "seen", "sensitive_view", "approval_request", "approval", "assignment", "step", "filing"]);
+const EXCLUDED_FROM_HASH = new Set(["signoff", "seen", "sensitive_view", "approval_request", "approval", "assignment", "step", "filing", "standard", "time"]);
 
 export function scopes(packet: Packet, index: PacketIndex, checks: CheckRun): Scope[] {
   const lineKeys = [...(index.lines.get(index.latestVersion)?.keys() ?? [])];

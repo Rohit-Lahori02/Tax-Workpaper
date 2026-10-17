@@ -21,6 +21,8 @@ export const FACT_KINDS = [
   "approval",
   "filing",
   "correction",
+  "standard",
+  "time",
 ] as const;
 export type FactKind = (typeof FACT_KINDS)[number];
 
@@ -44,6 +46,8 @@ export const KIND_LABELS: Record<FactKind, string> = {
   approval: "Client approved and signed",
   filing: "Filing record",
   correction: "Identity correction",
+  standard: "Firm standard changed",
+  time: "Time logged",
 };
 
 export const JUDGMENT_TYPES = [
@@ -330,3 +334,19 @@ export const EMPTY_SUMMARY: TargetSummary = {
   judgments: 0,
   total: 0,
 };
+
+/** A change to one firm standard. Target: standard:<key>. The latest live one wins. */
+export const StandardBody = z.object({
+  key: z.string().min(1),
+  value: z.unknown(),
+  text,
+});
+export type StandardBody = z.infer<typeof StandardBody>;
+
+/** Time logged against an area of the return. Target: area:<id>. */
+export const TimeBody = z.object({
+  hours: z.number().positive().max(24),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  text: z.string().trim().max(1000).optional(),
+});
+export type TimeBody = z.infer<typeof TimeBody>;

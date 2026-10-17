@@ -280,9 +280,9 @@ export default async function ApprovePage() {
       />
 
       {/* The path */}
-      <ol className="card grid gap-0 divide-y divide-border md:grid-cols-5 md:divide-x md:divide-y-0">
+      <ol className="card grid gap-0 sm:grid-cols-2 xl:grid-cols-5">
         {steps.map((s, i) => (
-          <li key={s.key} className="flex items-start gap-3 px-4 py-3">
+          <li key={s.key} className="flex items-start gap-3 border-b border-border px-4 py-3 last:border-b-0 sm:[&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0">
             <StepIcon state={s.state} />
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">step {i + 1}</div>

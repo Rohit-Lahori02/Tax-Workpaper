@@ -26,7 +26,21 @@ export function FormNav({ forms, active, version, attention }: { forms: FormEntr
     { label: "California", items: forms.filter((f) => f.jurisdiction === "california") },
   ];
   return (
-    <nav className="card sticky top-[72px] max-h-[calc(100vh-6rem)] overflow-auto scroll-thin p-2">
+    <>
+      {/* Below the large breakpoint the list would push the lines off screen; a scrolling strip of chips takes its place. */}
+      <nav className="scroll-thin -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 lg:hidden" aria-label="Forms">
+        {forms.map((f) => {
+          const n = attention?.[f.form] ?? 0;
+          return (
+            <Link key={f.form} href={"/return/" + encodeURIComponent(f.form) + "?v=" + encodeURIComponent(version)} title={formLabel(f.form)} className={cn("chip shrink-0", f.form === active && "is-active")}>
+              {n ? <span className="h-1.5 w-1.5 rounded-full bg-warn" /> : null}
+              {formShort(f.form)}
+              <span className="count">{f.count}</span>
+            </Link>
+          );
+        })}
+      </nav>
+    <nav className="card sticky top-[72px] hidden max-h-[calc(100vh-6rem)] overflow-auto scroll-thin p-2 lg:block" aria-label="Forms">
       {groups.map((g) => (
         <div key={g.label} className="mb-2 last:mb-0">
           <div className="flex items-center justify-between px-2.5 pb-1 pt-1.5 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted/80">
@@ -52,5 +66,6 @@ export function FormNav({ forms, active, version, attention }: { forms: FormEntr
         </div>
       ))}
     </nav>
+    </>
   );
 }

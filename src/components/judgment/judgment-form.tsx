@@ -1,6 +1,6 @@
 "use client";
 
-import { Gavel } from "lucide-react";
+import { AlertTriangle, Gavel } from "lucide-react";
 import { useState, useTransition } from "react";
 import { Badge, cn } from "@/components/ui";
 import { judgmentAction } from "@/lib/facts/actions-judgment";
@@ -137,16 +137,28 @@ export function JudgmentForm({
           ))}
         </div>
       ) : null}
-      <textarea name="text" rows={3} required placeholder={placeholder ?? "What was decided and why"} className={input} />
-      <input name="authority" placeholder={requireAuthority ? "Authority relied on (required): code section, regulation, publication" : "Authority relied on (optional)"} required={requireAuthority} className={input} />
-      <div className="flex items-center gap-2">
-        <button type="submit" disabled={pending} className="pill primary h-8">
-          Record
+      <label className="grid gap-1 text-[12px] text-muted">
+        What was decided and why
+        <textarea name="text" rows={3} required autoFocus placeholder={placeholder ?? "What was decided and why"} className={cn(input, "min-h-[72px] resize-y py-2 text-[13px] text-foreground")} />
+      </label>
+      <label className="grid gap-1 text-[12px] text-muted">
+        <span>
+          Authority relied on {requireAuthority ? <span className="text-warn">(required)</span> : <span>(optional)</span>}
+        </span>
+        <input name="authority" placeholder={requireAuthority ? "Code section, regulation, publication" : "Code section, publication, form instruction"} required={requireAuthority} className={cn(input, "text-foreground")} />
+      </label>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="submit" disabled={pending} className={cn("pill primary h-8", pending && "opacity-50")}>
+          <Gavel className="h-3.5 w-3.5" /> {pending ? "Recording…" : "Record"}
         </button>
         <button type="button" onClick={() => setOpen(false)} className="pill h-8">
           Cancel
         </button>
-        {error ? <span className="text-[12px] text-danger">{error}</span> : null}
+        {error ? (
+          <span className="flex items-center gap-1 text-[12px] text-danger" role="alert">
+            <AlertTriangle className="h-3.5 w-3.5" /> {error}
+          </span>
+        ) : null}
       </div>
     </form>
   );

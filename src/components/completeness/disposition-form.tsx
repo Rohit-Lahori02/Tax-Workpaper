@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertTriangle } from "lucide-react";
 import { useState, useTransition } from "react";
 import { Badge, cn } from "@/components/ui";
 import { dispositionAction } from "@/lib/facts/actions-judgment";
@@ -63,14 +64,18 @@ export function DispositionForm({
           </option>
         ))}
       </select>
-      <input name="text" placeholder="Why (optional)" className="input h-8 w-56 py-0 text-[12px]" />
+      <input name="text" placeholder="Why (optional)" className="input h-8 w-full py-0 text-[12px] sm:w-56" />
       <button type="submit" disabled={pending} className={cn("pill primary h-8", pending && "opacity-50")}>
-        Save
+        {pending ? "Saving…" : "Save"}
       </button>
-      <button type="button" onClick={() => setOpen(false)} className="text-[12px] text-muted hover:text-foreground">
+      <button type="button" onClick={() => setOpen(false)} className="pill h-8">
         Cancel
       </button>
-      {error ? <span className="text-[12px] text-danger">{error}</span> : null}
+      {error ? (
+        <span className="flex items-center gap-1 text-[12px] text-danger" role="alert">
+          <AlertTriangle className="h-3.5 w-3.5" /> {error}
+        </span>
+      ) : null}
     </form>
   );
 }

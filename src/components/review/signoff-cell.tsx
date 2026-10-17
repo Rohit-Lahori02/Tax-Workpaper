@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Lock, PenLine, RotateCcw } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Lock, PenLine, RotateCcw } from "lucide-react";
 import { useState, useTransition } from "react";
 import { cn } from "@/components/ui";
 import { signoffAction } from "@/lib/facts/actions-review";
@@ -69,9 +69,9 @@ export function SignoffCell({ cell }: { cell: SignoffCellData }) {
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)" className="input h-7 py-0 text-[12px]" />
           <div className="flex items-center gap-2">
             <button type="button" disabled={pending} onClick={sign} className={cn("pill primary h-7 px-2.5 text-[12px]", pending && "opacity-50")}>
-              <PenLine className="h-3 w-3" /> {cell.state === "reopened" ? "Re-sign" : "Sign as " + cell.level}
+              <PenLine className="h-3 w-3" /> {pending ? "Signing…" : cell.state === "reopened" ? "Re-sign" : "Sign as " + cell.level}
             </button>
-            <button type="button" onClick={() => setOpen(false)} className="text-[11.5px] text-muted hover:text-foreground">
+            <button type="button" onClick={() => setOpen(false)} className="pill h-7 px-2.5 text-[12px]">
               Cancel
             </button>
           </div>
@@ -99,7 +99,11 @@ export function SignoffCell({ cell }: { cell: SignoffCellData }) {
             {cell.changes.lines.length ? ", " + cell.changes.lines.length + " line" + (cell.changes.lines.length === 1 ? "" : "s") + " changed" : ""}
           </div>
           {action}
-          {error ? <div className="text-[11px] text-danger">{error}</div> : null}
+          {error ? (
+            <div className="mt-1 flex items-center gap-1 text-[11px] text-danger" role="alert">
+              <AlertTriangle className="h-3 w-3" /> {error}
+            </div>
+          ) : null}
         </div>
       </div>
     );
@@ -110,7 +114,11 @@ export function SignoffCell({ cell }: { cell: SignoffCellData }) {
       {cell.allowed ? (
         <div className="grid gap-1">
           {action}
-          {error ? <div className="text-[11px] text-danger">{error}</div> : null}
+          {error ? (
+            <div className="flex items-center gap-1 text-[11px] text-danger" role="alert">
+              <AlertTriangle className="h-3 w-3" /> {error}
+            </div>
+          ) : null}
         </div>
       ) : (
         <span className="inline-flex items-center gap-1.5 text-[12px] text-muted/70">

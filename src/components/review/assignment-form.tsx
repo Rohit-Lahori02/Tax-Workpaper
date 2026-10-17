@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertTriangle } from "lucide-react";
 import { useState, useTransition } from "react";
 import { cn } from "@/components/ui";
 import { assignAction } from "@/lib/facts/actions-review";
@@ -67,22 +68,32 @@ export function AssignmentForm({
     >
       <input type="hidden" name="scope" value={scope} />
       <input type="hidden" name="role" value={role} />
-      <select name="assigneeId" defaultValue={assigneeId} className="input h-7 py-0 text-[12px]">
+      <label className="grid gap-1 text-[11px] text-muted">
+        Assign to
+        <select name="assigneeId" defaultValue={assigneeId} className="input h-7 py-0 text-[12px] text-foreground">
         {eligible.map((s) => (
           <option key={s.id} value={s.id}>
             {s.name} · {s.role.replace(/_/g, " ")}
           </option>
         ))}
-      </select>
-      <input type="date" name="due" defaultValue={due ?? ""} className="input h-7 py-0 text-[12px]" />
-      <div className="flex items-center gap-2">
+        </select>
+      </label>
+      <label className="grid gap-1 text-[11px] text-muted">
+        Due
+        <input type="date" name="due" defaultValue={due ?? ""} className="input h-7 py-0 text-[12px] text-foreground" />
+      </label>
+      <div className="flex flex-wrap items-center gap-2">
         <button type="submit" disabled={pending} className={cn("pill primary h-7 px-2.5 text-[12px]", pending && "opacity-50")}>
-          Save
+          {pending ? "Saving…" : "Save"}
         </button>
-        <button type="button" onClick={() => setOpen(false)} className="text-[12px] text-muted hover:text-foreground">
+        <button type="button" onClick={() => setOpen(false)} className="pill h-7 px-2.5 text-[12px]">
           Cancel
         </button>
-        {error ? <span className="text-[11px] text-danger">{error}</span> : null}
+        {error ? (
+          <span className="flex items-center gap-1 text-[11px] text-danger" role="alert">
+            <AlertTriangle className="h-3 w-3" /> {error}
+          </span>
+        ) : null}
       </div>
     </form>
   );

@@ -6,6 +6,7 @@ import { getPacket } from "@/lib/packet/load";
 import { canNote, canVerify } from "@/lib/permissions";
 import { getCurrentActor } from "@/lib/session";
 import type { ActionResult } from "./actions";
+import { frozenMessage } from "./guards";
 import { insertFact } from "./repo";
 import { DispositionBody, JudgmentBody, StepBody } from "./types";
 
@@ -36,6 +37,8 @@ export async function judgmentAction(fd: FormData): Promise<ActionResult> {
   return guarded(async () => {
     const actor = await getCurrentActor();
     if (!canVerify(actor)) return bad("Your role cannot record judgments.");
+    const frozen = await frozenMessage();
+    if (frozen) return bad(frozen);
     const target = Target.parse(str(fd, "target"));
     const answers = fd
       .getAll("answers")

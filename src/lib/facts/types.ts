@@ -19,6 +19,8 @@ export const FACT_KINDS = [
   "assignment",
   "approval_request",
   "approval",
+  "filing",
+  "correction",
 ] as const;
 export type FactKind = (typeof FACT_KINDS)[number];
 
@@ -40,6 +42,8 @@ export const KIND_LABELS: Record<FactKind, string> = {
   assignment: "Assigned",
   approval_request: "Sent to client for approval",
   approval: "Client approved and signed",
+  filing: "Filing record",
+  correction: "Identity correction",
 };
 
 export const JUDGMENT_TYPES = [
@@ -200,6 +204,80 @@ export const ApprovalBody = z.object({
   adjustments: z.number().int(),
 });
 export type ApprovalBody = z.infer<typeof ApprovalBody>;
+
+/** Filing lifecycle records, one kind with an event discriminator. Target: filing:<jurisdiction>. */
+export const FILING_EVENTS = ["extension", "transmit", "ack", "amendment", "notice_response", "rollforward"] as const;
+export type FilingEvent = (typeof FILING_EVENTS)[number];
+
+const FilingLines = z.record(z.string(), z.union([z.number(), z.string()]));
+const FilingSummary = z.object({ total_tax: z.number(), payments: z.number(), balance_due: z.number() });
+
+export const FilingBody = z.discriminatedUnion("event", [
+  z.object({
+    event: z.literal("extension"),
+    form: z.string().min(1),
+    payment: z.number().nonnegative(),
+    basedOn: z.string().min(1),
+    estimatedTax: z.number(),
+    estimatedPayments: z.number(),
+    estimatedBalance: z.number(),
+    text: z.string().trim().max(2000).optional(),
+  }),
+  z.object({
+    event: z.literal("transmit"),
+    kind: z.enum(["original", "amended"]),
+    submissionId: z.string().min(8),
+    /** Hash of the whole return at transmission; the frozen copy is whatever matches it. */
+    hash: z.string().length(64),
+    version: z.string(),
+    adjustments: z.number().int(),
+    summary: FilingSummary,
+    /** Key line values as transmitted, for the amended-return columns and the client copy. */
+    lines: FilingLines,
+    /** For amended transmissions: the transmit fact being amended. */
+    amends: z.string().uuid().optional(),
+    text: z.string().trim().max(2000).optional(),
+  }),
+  z.object({
+    event: z.literal("ack"),
+    transmissionId: z.string().uuid(),
+    status: z.enum(["accepted", "rejected", "held"]),
+    errors: z.array(z.object({ code: z.string(), message: z.string() })),
+    agencyDate: z.string(),
+  }),
+  z.object({
+    event: z.literal("amendment"),
+    /** The accepted transmit fact this amendment sits on top of. */
+    amends: z.string().uuid(),
+    reason: text,
+  }),
+  z.object({
+    event: z.literal("notice_response"),
+    noticeId: z.string().min(1),
+    hash: z.string().length(64),
+    items: z.number().int(),
+    exhibits: z.array(z.string()),
+    text: z.string().trim().max(4000).optional(),
+  }),
+  z.object({
+    event: z.literal("rollforward"),
+    toYear: z.number().int(),
+    hash: z.string().length(64),
+    carryovers: z.record(z.string(), z.unknown()),
+    openItems: z.array(z.string()),
+    text: z.string().trim().max(4000).optional(),
+  }),
+]);
+export type FilingBody = z.infer<typeof FilingBody>;
+
+/** A correction to identity data entered by hand, pointing at the evidence rather than storing the value. Target: person:<id>. */
+export const CorrectionBody = z.object({
+  field: z.string().min(1),
+  /** The extracted value (ev-…) the corrected value is read from. */
+  evidence: z.string().min(1),
+  text: z.string().trim().max(2000).optional(),
+});
+export type CorrectionBody = z.infer<typeof CorrectionBody>;
 
 export type VerificationBody = z.infer<typeof VerificationBody>;
 export type NoteBody = z.infer<typeof NoteBody>;

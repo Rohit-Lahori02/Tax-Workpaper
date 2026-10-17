@@ -3,6 +3,7 @@ import type { Packet } from "@/lib/packet/schema";
 import { businessChecks } from "./business";
 import { deductionChecks } from "./deductions";
 import { documentChecks } from "./documents";
+import { identityChecks } from "./identity";
 import { investmentChecks } from "./investments";
 import { lineChecks } from "./lines";
 import { paymentChecks } from "./payments";
@@ -15,6 +16,7 @@ const money = new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximum
 export const ALL_CHECKS: Check[] = [
   ...lineChecks,
   ...documentChecks,
+  ...identityChecks,
   ...paymentChecks,
   ...investmentChecks,
   ...businessChecks,

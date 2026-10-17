@@ -5,13 +5,14 @@ import type { ReactNode } from "react";
 import { LiveRefresh } from "@/components/live/live-refresh";
 import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
+import { ReplayBanner } from "@/components/timeline/now-cursor";
 import { factsSince, lastSeenSeq } from "@/lib/effective";
 import { getLedger } from "@/lib/facts/repo";
-import { fmtDate } from "@/lib/format";
+import { fmtDate, fmtDateTime } from "@/lib/format";
 import { getPacket } from "@/lib/packet/load";
 import { canReveal, canSeeLedger } from "@/lib/permissions";
 import { getReviewContext, needsYou } from "@/lib/review";
-import { getReveal, getCurrentActor, listActors } from "@/lib/session";
+import { getNow, getReveal, getCurrentActor, listActors } from "@/lib/session";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const { packet, index } = getPacket();
   const actor = await getCurrentActor();
-  const [reveal, { ledger, error: ledgerError }, jar, review] = await Promise.all([getReveal(actor), getLedger(), cookies(), getReviewContext()]);
+  const [reveal, { ledger, error: ledgerError }, jar, review, now] = await Promise.all([getReveal(actor), getLedger(), cookies(), getReviewContext(), getNow()]);
   // The theme choice lives in a cookie so the server renders it: no inline script, no flash.
   const themeCookie = jar.get("wp-theme")?.value;
   const theme = themeCookie === "light" || themeCookie === "dark" ? themeCookie : undefined;
@@ -63,6 +64,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           />
           <div className="flex min-w-0 flex-1 flex-col">
             <Topbar actors={actors} actor={actor} revealEligible={canReveal(actor)} revealOn={reveal} unseen={unseen} live={<LiveRefresh initialSeq={latestSeq} />} />
+            {now.replay ? <ReplayBanner when={fmtDateTime(now.iso)} /> : null}
             {ledgerError ? (
               <div className="flex items-center gap-2 border-b border-warn/30 bg-warn-soft px-6 py-2 text-[12.5px] text-warn lg:px-8">
                 <AlertTriangle className="h-3.5 w-3.5" /> {ledgerError}

@@ -8,6 +8,7 @@ import { getPacket } from "@/lib/packet/load";
 import { canAdjust, canUndoBatch, canVerify } from "@/lib/permissions";
 import { getCurrentActor } from "@/lib/session";
 import type { ActionResult } from "./actions";
+import { frozenMessage } from "./guards";
 import { getLedger, insertFact } from "./repo";
 import { AdjustmentBody, SeenBody, VerificationBody } from "./types";
 
@@ -40,6 +41,8 @@ export async function adjustAction(fd: FormData): Promise<ActionResult> {
   return guarded(async () => {
     const actor = await getCurrentActor();
     if (!canAdjust(actor)) return bad("Your role cannot adjust the return.");
+    const frozen = await frozenMessage();
+    if (frozen) return bad(frozen);
     const { packet, index } = getPacket();
     const versionId = index.latestVersion;
     const version = index.versions.get(versionId)!;
@@ -102,6 +105,10 @@ export async function undoBatchAction(fd: FormData): Promise<ActionResult> {
     const live = ledger.all.filter((f) => f.batchId === batchId && !f.retracted && !["retract", "resolve", "seen", "sensitive_view"].includes(f.kind));
     if (live.length === 0) return bad("Nothing left to undo in that batch.");
     if (!canUndoBatch(actor, live.map((f) => f.actorId))) return bad("Only the person who made these records, or a partner, can undo them.");
+    if (live.some((f) => f.kind === "adjustment")) {
+      const frozen = await frozenMessage();
+      if (frozen) return bad(frozen);
+    }
     const undoBatch = randomUUID();
     for (const f of live) {
       await insertFact({ kind: "retract", actorId: actor.id, target: f.target, body: { factId: f.id, reason: "Undo batch" }, batchId: undoBatch, supersedes: f.id });
@@ -115,6 +122,8 @@ export async function adoptWhatIfAction(fd: FormData): Promise<ActionResult> {
   return guarded(async () => {
     const actor = await getCurrentActor();
     if (!canAdjust(actor)) return bad("Your role cannot adjust the return.");
+    const frozen = await frozenMessage();
+    if (frozen) return bad(frozen);
     const { packet, index } = getPacket();
     const id = str(fd, "id");
     const alt = packet.what_if.alternatives.find((a) => a.id === id);

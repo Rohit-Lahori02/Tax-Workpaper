@@ -13,6 +13,7 @@ import { effectiveReturn } from "@/lib/effective";
 import { getLedger } from "@/lib/facts/repo";
 import { KIND_LABELS, type FactKind } from "@/lib/facts/types";
 import { getReviewContext } from "@/lib/review";
+import { PHASE_LABELS } from "@/lib/season";
 import { documentRows } from "@/lib/packet/documents";
 import { getPacket } from "@/lib/packet/load";
 import { logSensitiveView } from "@/lib/sensitive";
@@ -261,7 +262,7 @@ export default async function OverviewPage() {
 
         <Card
           title="Review and filing"
-          description={gatesOpen + " of " + review.gates.length + " filing gates open."}
+          description={gatesOpen + " of " + review.gates.length + " filing gates open · " + PHASE_LABELS[review.filing.phase].toLowerCase() + "."}
           aside={
             <Link href="/filing" className="text-accent hover:underline">
               Filing
@@ -403,7 +404,14 @@ export default async function OverviewPage() {
           )}
         </Card>
 
-        <Card title="Deadlines">
+        <Card
+          title="Deadlines"
+          aside={
+            <Link href="/timeline" className="text-accent hover:underline">
+              Timeline
+            </Link>
+          }
+        >
           <ul className="grid gap-2 text-[13px]">
             {[...packet.firm.deadlines]
               .sort((a, b) => a.date.localeCompare(b.date))

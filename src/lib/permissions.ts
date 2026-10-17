@@ -31,3 +31,10 @@ export const canAssign = (a: ActorLite) => a.kind === "staff" && (a.role === "pa
 export const canRequestApproval = (a: ActorLite) => a.kind === "staff" && PREP_ROLES.has(a.role);
 export const canClientApprove = (a: ActorLite) => a.kind === "client";
 export const canApproveAdjustment = (a: ActorLite) => a.kind === "staff" && a.role === "partner";
+/** Extensions and e-file transmissions are preparer-and-above work; the firm's ERO signs electronically. */
+export const canFile = (a: ActorLite) => a.kind === "staff" && PREP_ROLES.has(a.role);
+/** Opening an amendment on an accepted return is a review-level decision. */
+export const canAmend = (a: ActorLite) => a.kind === "staff" && REVIEW_ROLES.has(a.role);
+export const canCorrectIdentity = (a: ActorLite) => a.kind === "staff" && PREP_ROLES.has(a.role);
+export const canRespondToNotice = (a: ActorLite) => a.kind === "staff" && PREP_ROLES.has(a.role);
+export const canRollForward = (a: ActorLite) => a.kind === "staff" && PREP_ROLES.has(a.role);

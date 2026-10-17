@@ -9,6 +9,7 @@ import type { PacketIndex } from "@/lib/packet/index";
 import { getPacket } from "@/lib/packet/load";
 import type { Packet } from "@/lib/packet/schema";
 import type { Actor } from "@/lib/roles";
+import { filingState, identityMismatches, type FilingState, type IdentityMismatch } from "@/lib/season";
 import {
   adjustmentApprovals,
   approvalStatus,
@@ -43,6 +44,8 @@ export interface ReviewContext {
   client: ApprovalStatus;
   gates: FilingGate[];
   assignments: Assignment[];
+  filing: FilingState;
+  identity: IdentityMismatch[];
 }
 
 /** Everything the review pages and actions need, computed once per request. */
@@ -82,11 +85,13 @@ export const getReviewContext = cache(async (): Promise<ReviewContext> => {
     client,
     gates,
     assignments: assignments(packet, ledger, all.map((s) => s.id)),
+    filing: filingState(ledger),
+    identity: identityMismatches(packet, index, ledger),
   };
 });
 
 export interface NeedsYouItem {
-  kind: "question" | "signoff" | "reopened" | "blocking" | "approval" | "client-approval" | "deadline";
+  kind: "question" | "signoff" | "reopened" | "blocking" | "approval" | "client-approval" | "deadline" | "filing" | "notice";
   title: string;
   detail: string;
   href: string;
@@ -130,6 +135,27 @@ export function needsYou(ctx: ReviewContext, actor: Actor, now = new Date()): Ne
       const scope = ctx.scopes.find((s) => s.lines.includes(b.target) || s.documents.includes(b.target));
       if (actor.role === "preparer" && scope && !myScopes.has(scope.id)) continue;
       out.push({ kind: "blocking", title: "Blocking note on " + b.target, detail: String(b.body.text ?? ""), href: "/review#blocking" });
+    }
+    const fs = ctx.filing;
+    const rejected = [fs.federal.current, fs.california.current].filter((t) => t && t.status === "rejected");
+    if (rejected.length && (actor.role === "preparer" || actor.role === "reviewer")) {
+      out.push({ kind: "filing", title: "E-file rejected: fix and retransmit", detail: rejected.flatMap((t) => t!.errors.map((e) => e.code + " " + e.message)).join(" "), href: "/filing" });
+    }
+    if ([fs.federal.current, fs.california.current].some((t) => t && t.status === "transmitted")) {
+      out.push({ kind: "filing", title: "Pick up the agency acknowledgment", detail: "The return was transmitted and the agencies have not answered yet.", href: "/filing" });
+    }
+    const uncorrected = ctx.identity.filter((m) => !m.correction);
+    if (uncorrected.length && actor.role !== "firm_administrator") {
+      out.push({ kind: "filing", title: "Identity data disagrees with a document in the file", detail: uncorrected.map((m) => m.name + ": " + m.field.toUpperCase() + " on " + m.documentId + " differs from the entry").join("; "), href: "/filing#identity" });
+    }
+    for (const n of ctx.packet.tax_agency_records.notices) {
+      if (!n.response_due || !n.document) continue;
+      const doc = ctx.packet.documents.find((d) => d.id === n.document);
+      if (!doc || doc.received_at > now.toISOString()) continue;
+      const responded = ledger.latest("notice:" + n.id, "filing");
+      if (responded) continue;
+      const days = Math.ceil((Date.parse(n.response_due) - now.getTime()) / DAY);
+      out.push({ kind: "notice", title: n.agency + " " + n.type + " response " + (days < 0 ? "overdue" : "due in " + days + " day" + (days === 1 ? "" : "s")), detail: (n.items_under_examination ?? []).join(" "), href: "/notices/" + n.id, due: n.response_due, overdue: days < 0 });
     }
     for (const a of ctx.assignments) {
       if (a.assigneeId !== actor.id || !a.due) continue;

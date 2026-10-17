@@ -5,6 +5,7 @@ import { Fragment, type ReactNode } from "react";
 export const cn = clsx;
 
 export function Card({
+  id,
   title,
   description,
   aside,
@@ -13,6 +14,7 @@ export function Card({
   flush,
   children,
 }: {
+  id?: string;
   title?: ReactNode;
   description?: ReactNode;
   aside?: ReactNode;
@@ -23,7 +25,7 @@ export function Card({
   children: ReactNode;
 }) {
   return (
-    <section className={cn("card overflow-hidden", className)}>
+    <section id={id} className={cn("card overflow-hidden", className)}>
       {title ? (
         <header className="flex items-start justify-between gap-3 px-4 pb-2 pt-3.5">
           <div className="min-w-0">

@@ -244,3 +244,27 @@ mark.ev.is-selected {
 .pill.primary:hover {
   filter: brightness(1.06);
 }
+
+/* ---------- Print: the client copy and notice packages ---------- */
+@media print {
+  aside,
+  header.sticky,
+  .print\:hidden {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+  body {
+    background: #fff;
+    color: #111;
+  }
+  .card {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}

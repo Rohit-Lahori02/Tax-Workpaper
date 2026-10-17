@@ -27,7 +27,7 @@ export interface Scope {
   other: string[];
 }
 
-const EXCLUDED_FROM_HASH = new Set(["signoff", "seen", "sensitive_view", "approval_request", "approval", "assignment", "step"]);
+const EXCLUDED_FROM_HASH = new Set(["signoff", "seen", "sensitive_view", "approval_request", "approval", "assignment", "step", "filing"]);
 
 export function scopes(packet: Packet, index: PacketIndex, checks: CheckRun): Scope[] {
   const lineKeys = [...(index.lines.get(index.latestVersion)?.keys() ?? [])];
@@ -53,7 +53,7 @@ export function scopeById(all: Scope[], id: string): Scope | undefined {
   return all.find((s) => s.id === id);
 }
 
-function sha256(s: string): string {
+export function sha256(s: string): string {
   return createHash("sha256").update(s).digest("hex");
 }
 

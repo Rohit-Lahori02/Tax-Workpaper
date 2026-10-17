@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DocumentTable } from "@/components/documents/document-table";
 import { PageHeader } from "@/components/page-header";
-import { Card, Stat } from "@/components/ui";
+import { Badge, Card, Stat } from "@/components/ui";
 import { documentRows } from "@/lib/packet/documents";
 import { getPacket } from "@/lib/packet/load";
 import { getNow } from "@/lib/session";
@@ -23,14 +23,22 @@ export default async function DocumentsPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Review"
         title="Documents"
+        meta={
+          <>
+            <Badge tone="neutral">{rows.length} documents</Badge>
+            <Badge tone="neutral">{rows.reduce((n, r) => n + r.values, 0).toLocaleString("en-US")} extracted values</Badge>
+            <Badge tone="neutral">{rows.reduce((n, r) => n + r.pageCount, 0)} pages</Badge>
+          </>
+        }
         description={
           "Every document the client or the firm put in the file, and where each one landed on return " +
           version +
           ". A document that reaches no line is either irrelevant, a duplicate, or a gap in the return. Each one needs a reason."
         }
       />
-      <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label="On the return" value={reached} hint={"documents feeding at least one line in " + version} tone="ok" />
         <Stat label="Reach no line" value={unused} hint="extracted, but no line cites them" tone={unused ? "warn" : undefined} />
         <Stat label="Not extracted" value={notExtracted} hint="the pipeline read nothing from them" tone={notExtracted ? "danger" : undefined} />

@@ -22,7 +22,7 @@ export function PageHeader({
       <div className="min-w-0">
         {eyebrow ? <div className="mb-1.5 text-[12px] font-medium text-muted">{eyebrow}</div> : null}
         <h1 className="text-[24px] font-semibold leading-8 tracking-[-0.02em]">{title}</h1>
-        {description ? <p className="mt-1.5 max-w-3xl text-[13.5px] leading-[22px] text-muted">{description}</p> : null}
+        {description ? <div className="mt-1.5 max-w-3xl text-[13.5px] leading-[22px] text-muted">{description}</div> : null}
         {meta ? <div className="mt-3 flex flex-wrap items-center gap-2">{meta}</div> : null}
       </div>
       {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}

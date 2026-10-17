@@ -5,7 +5,7 @@ import { DocumentViewer, type ViewerData, type ViewerValue } from "@/components/
 import { FactsPanel } from "@/components/facts/facts-panel";
 import { PageHeader } from "@/components/page-header";
 import { RefLink } from "@/components/ref-link";
-import { Badge } from "@/components/ui";
+import { Badge, KV } from "@/components/ui";
 import { factsContext } from "@/lib/facts/context";
 import { getLedger } from "@/lib/facts/repo";
 import type { FactView, TargetSummary } from "@/lib/facts/types";
@@ -108,7 +108,7 @@ export default async function DocumentPage({ params, searchParams }: Props) {
     }
   }
 
-  const data: ViewerData = { docId: doc.id, pageCount: doc.page_count, pages, values: viewerValues, version };
+  const data: ViewerData = { docId: doc.id, title: doc.title, pageCount: doc.page_count, pages, values: viewerValues, version };
   const initialValue = valueParam && viewerValues.some((v) => v.id === valueParam) ? valueParam : null;
   const requestedPage = Number(pageParam);
   const initialPage = initialValue
@@ -127,23 +127,23 @@ export default async function DocumentPage({ params, searchParams }: Props) {
             <Link href="/documents" className="hover:underline">
               Documents
             </Link>
-            <span>/</span>
+            <span className="text-border-strong">/</span>
             <span className="font-mono">{doc.id}</span>
           </span>
         }
         title={doc.title}
         description={
-          doc.issuer +
-          " · " +
-          doc.document_type +
-          " · belongs to " +
-          doc.belongs_to +
-          " · received " +
-          fmtDateTime(doc.received_at) +
-          " from the " +
-          doc.uploaded_by +
-          " · " +
-          doc.file_name
+          <KV
+            className="mt-1 !gap-x-4 !gap-y-1 text-[12.5px] sm:grid-cols-[max-content_1fr_max-content_1fr]"
+            rows={[
+              ["Issuer", doc.issuer],
+              ["Type", doc.document_type],
+              ["Belongs to", doc.belongs_to],
+              ["Received", fmtDateTime(doc.received_at) + " from the " + doc.uploaded_by],
+              ["File", <span key="f" className="font-mono text-[11.5px]">{doc.file_name}</span>],
+              ["Used in", usage.usedIn.length ? usage.usedIn.join(", ") : "no version"],
+            ]}
+          />
         }
         meta={
           <>
@@ -177,7 +177,6 @@ export default async function DocumentPage({ params, searchParams }: Props) {
             {doc.marked_corrected ? <Badge tone="warn">marked CORRECTED by issuer</Badge> : null}
             {unlocated ? <Badge tone="warn">{unlocated} values not found on page as read</Badge> : null}
             {!reveal ? <Badge>sensitive numbers masked</Badge> : null}
-            <span className="text-xs text-muted">used in {usage.usedIn.length ? usage.usedIn.join(", ") : "no version"}</span>
           </>
         }
         actions={

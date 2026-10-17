@@ -17,7 +17,15 @@ import { timeByArea, timeEntries } from "@/lib/standards";
 export const metadata: Metadata = { title: "Status" };
 
 const PHASE_TONE: Record<FilingPhase, Tone> = { preparing: "neutral", transmitted: "accent", rejected: "danger", filed: "ok", amending: "warn", amended: "ok" };
-const SIGN_TONE = { valid: "ok", reopened: "warn", missing: "neutral" } as const;
+const SIGN_DOT = { valid: "bg-ok", reopened: "bg-warn", missing: "bg-border-strong" } as const;
+
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
+}
 
 export default async function StatusPage() {
   const actor = await getCurrentActor();
@@ -43,6 +51,7 @@ export default async function StatusPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Firm"
         title="Engagement status"
         description="One screen for the person running the season: where the return stands, each area's evidence, checks, sign-offs and time against budget, and what is sitting with whom."
         meta={
@@ -69,15 +78,16 @@ export default async function StatusPage() {
             <thead>
               <tr>
                 <th>Area</th>
-                <th className="text-right">Verified</th>
+                <th>Verified</th>
                 <th className="text-right">Errors</th>
                 <th className="text-right">Open Qs</th>
                 <th className="text-right">Blocking</th>
-                {levels.map((l) => (
-                  <th key={l} className="capitalize">
-                    {l}
-                  </th>
-                ))}
+                <th>
+                  <span className="inline-flex items-center gap-1.5">
+                    Sign-offs
+                    <span className="font-mono text-[9.5px] normal-case tracking-normal text-muted">{levels.map((l) => l[0].toUpperCase()).join(" · ")}</span>
+                  </span>
+                </th>
                 <th>Preparer</th>
                 <th>Time vs budget</th>
               </tr>
@@ -100,21 +110,48 @@ export default async function StatusPage() {
                           {a.lines} lines · {a.documents} docs
                         </div>
                       </td>
-                      <td className="text-right tabular-nums">{a.lines ? Math.round((a.verified / a.lines) * 100) + "%" : "—"}</td>
-                      <td className={cn("text-right tabular-nums", a.checkErrors - a.checkErrorsResolved > 0 && "text-danger")}>{a.checkErrors ? a.checkErrors - a.checkErrorsResolved + " / " + a.checkErrors : "0"}</td>
-                      <td className="text-right tabular-nums">{a.openQuestions}</td>
-                      <td className={cn("text-right tabular-nums", a.blocking && "text-danger")}>{a.blocking}</td>
-                      {levels.map((l) => {
-                        const s = statuses.find((x) => x.scope.id === "area:" + a.id && x.level === l);
-                        return (
-                          <td key={l}>
-                            <Badge tone={SIGN_TONE[s?.state ?? "missing"]} dot>
-                              {s?.state ?? "missing"}
-                            </Badge>
-                          </td>
-                        );
-                      })}
-                      <td className="text-muted">{prep ? nameOf(prep.assigneeId) : "—"}</td>
+                      <td className="min-w-[140px]">
+                        {a.lines ? (
+                          <span className="flex items-center gap-2">
+                            <span className="h-1.5 w-16 overflow-hidden rounded-full bg-surface-2">
+                              <span className={cn("block h-full rounded-full", a.verified === a.lines ? "bg-ok" : "bg-accent")} style={{ width: Math.round((a.verified / a.lines) * 100) + "%" }} />
+                            </span>
+                            <span className="font-mono text-[11px] tabular-nums text-muted">{Math.round((a.verified / a.lines) * 100)}%</span>
+                          </span>
+                        ) : (
+                          <span className="text-border-strong">—</span>
+                        )}
+                      </td>
+                      <td className="text-right">
+                        {a.checkErrors ? (
+                          <span className={cn("rounded-md px-1.5 font-mono text-[11px] leading-[18px]", a.checkErrors - a.checkErrorsResolved > 0 ? "bg-danger-soft text-danger" : "bg-ok-soft text-ok")}>
+                            {a.checkErrors - a.checkErrorsResolved}/{a.checkErrors}
+                          </span>
+                        ) : (
+                          <span className="text-border-strong">—</span>
+                        )}
+                      </td>
+                      <td className={cn("text-right tabular-nums", a.openQuestions ? "text-accent" : "text-border-strong")}>{a.openQuestions || "—"}</td>
+                      <td className={cn("text-right tabular-nums", a.blocking ? "text-danger" : "text-border-strong")}>{a.blocking || "—"}</td>
+                      <td>
+                        <span className="inline-flex items-center gap-1.5">
+                          {levels.map((l) => {
+                            const s = statuses.find((x) => x.scope.id === "area:" + a.id && x.level === l);
+                            const st = s?.state ?? "missing";
+                            return <span key={l} className={cn("h-2.5 w-2.5 rounded-full ring-2 ring-surface", SIGN_DOT[st])} title={l + ": " + st + (s?.fact ? " · " + s.fact.actorName : "")} />;
+                          })}
+                        </span>
+                      </td>
+                      <td>
+                        {prep ? (
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-accent-soft text-[9px] font-semibold text-accent">{initials(nameOf(prep.assigneeId))}</span>
+                            <span className="text-muted">{nameOf(prep.assigneeId)}</span>
+                          </span>
+                        ) : (
+                          <span className="text-border-strong">—</span>
+                        )}
+                      </td>
                       <td className="min-w-[150px]">
                         <div className="flex items-center gap-2">
                           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">
@@ -134,27 +171,44 @@ export default async function StatusPage() {
       </Card>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-2">
-        <Card title="Who has what" description="Needs-you items and hours by person, from the same rules as each person's My work page.">
+        <Card title="Who has what" description="Needs-you items and hours by person, from the same rules as each person's My work page." flush>
           <table className="tbl">
             <thead>
               <tr>
                 <th>Person</th>
-                <th>Role</th>
-                <th className="text-right">Waiting on them</th>
+                <th>Waiting on them</th>
                 <th className="text-right">Overdue</th>
                 <th className="text-right">Hours</th>
               </tr>
             </thead>
             <tbody>
-              {workload.map((w) => (
-                <tr key={w.actor.id}>
-                  <td className="font-medium">{w.actor.name}</td>
-                  <td className="capitalize text-muted">{w.actor.role.replace(/_/g, " ")}</td>
-                  <td className="text-right tabular-nums">{w.items.length}</td>
-                  <td className={cn("text-right tabular-nums", w.items.some((i) => i.overdue) && "text-danger")}>{w.items.filter((i) => i.overdue).length}</td>
-                  <td className="text-right tabular-nums">{w.hours}</td>
-                </tr>
-              ))}
+              {workload.map((w) => {
+                const max = Math.max(1, ...workload.map((x) => x.items.length));
+                const overdue = w.items.filter((i) => i.overdue).length;
+                return (
+                  <tr key={w.actor.id}>
+                    <td className="pl-5">
+                      <span className="flex items-center gap-2.5">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-accent-soft text-[10px] font-semibold text-accent">{initials(w.actor.name)}</span>
+                        <span className="min-w-0">
+                          <span className="block font-medium">{w.actor.name}</span>
+                          <span className="block text-[11px] capitalize text-muted">{w.actor.role.replace(/_/g, " ")}</span>
+                        </span>
+                      </span>
+                    </td>
+                    <td className="min-w-[160px]">
+                      <span className="flex items-center gap-2">
+                        <span className="h-1.5 w-24 overflow-hidden rounded-full bg-surface-2">
+                          <span className={cn("block h-full rounded-full", overdue ? "bg-danger" : w.items.length ? "bg-warn" : "bg-border-strong")} style={{ width: Math.round((w.items.length / max) * 100) + "%" }} />
+                        </span>
+                        <span className="font-mono text-[11px] tabular-nums">{w.items.length}</span>
+                      </span>
+                    </td>
+                    <td className={cn("text-right tabular-nums", overdue ? "text-danger" : "text-border-strong")}>{overdue || "—"}</td>
+                    <td className="pr-5 text-right tabular-nums">{w.hours || <span className="text-border-strong">—</span>}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </Card>

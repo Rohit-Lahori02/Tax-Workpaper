@@ -35,6 +35,7 @@ export default async function AssetsPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Workpapers"
         title="Depreciation by asset"
         description={
           assets.length +
@@ -57,9 +58,11 @@ export default async function AssetsPage() {
           <Card
             key={activity}
             title={activity}
+            description={list.length + " asset" + (list.length === 1 ? "" : "s")}
             aside={
-              <span>
-                federal {fmtNumber(total(list, "federal", "depreciation_2025"))} · CA {fmtNumber(total(list, "california", "depreciation_2025"))}
+              <span className="flex items-center gap-1.5">
+                <Badge tone="accent">federal {fmtNumber(total(list, "federal", "depreciation_2025"))}</Badge>
+                <Badge tone="warn">CA {fmtNumber(total(list, "california", "depreciation_2025"))}</Badge>
               </span>
             }
             flush
@@ -90,10 +93,10 @@ export default async function AssetsPage() {
                     const disposition = (a as unknown as { disposition?: Record<string, unknown> }).disposition;
                     const findings = run.findings.filter((x) => x.refs.includes("asset:" + a.asset_id));
                     return (
-                      <tr key={a.asset_id} id={a.asset_id}>
-                        <td>
+                      <tr key={a.asset_id} id={a.asset_id} className="scroll-mt-24">
+                        <td className="min-w-[240px] pl-5">
                           <div className="font-medium">{a.description}</div>
-                          <div className="flex items-center gap-2 text-[11px]">
+                          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px]">
                             <RefLink refId={"asset:" + a.asset_id} href={"/r/" + encodeURIComponent("asset:" + a.asset_id)} />
                             {prior ? (
                               <details className="inline">
@@ -116,7 +119,7 @@ export default async function AssetsPage() {
                         <td className="num">{fmtNumber(a.cost)}</td>
                         <td className="num text-muted">{n(a as unknown as Record<string, unknown>, "land_value_not_depreciated") !== null ? fmtNumber(n(a as unknown as Record<string, unknown>, "land_value_not_depreciated")!) : "—"}</td>
                         <td className="num text-muted">{fmtNumber(n(f, "prior_accumulated") ?? 0)}</td>
-                        <td className="num font-medium">{fmtNumber(n(f, "depreciation_2025") ?? 0)}</td>
+                        <td className="num font-semibold">{fmtNumber(n(f, "depreciation_2025") ?? 0)}</td>
                         <td className="num">{fmtNumber(n(c, "depreciation_2025") ?? 0)}</td>
                         <td className="num">{fmtNumber(n(m, "depreciation_2025") ?? 0)}</td>
                         <td className="num">{fmtNumber(n(f, "accumulated_end") ?? 0)}</td>

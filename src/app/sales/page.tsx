@@ -29,6 +29,7 @@ export default async function SalesPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Workpapers"
         title="Sales detail"
         description={
           rows.length +
@@ -67,8 +68,11 @@ export default async function SalesPage() {
                 const agrees = engine !== null && Math.abs(engine - b.gain) <= 1;
                 return (
                   <tr key={b.box}>
-                    <td>
-                      <span className="font-mono">{b.box}</span> <span className="text-muted">{b.term}</span>
+                    <td className="pl-5">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-surface-2 font-mono text-[11.5px] font-semibold ring-1 ring-inset ring-border">{b.box}</span>
+                        <span className="text-[11.5px] text-muted">{b.term}</span>
+                      </span>
                     </td>
                     <td className="num">{b.lots}</td>
                     <td className="num">{fmtNumber(b.proceeds)}</td>

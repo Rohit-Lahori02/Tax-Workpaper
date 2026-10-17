@@ -26,6 +26,7 @@ export default async function BooksPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Workpapers"
         title="Books to taxable income"
         description={
           "Lindqvist Studio's profit and loss" +
@@ -63,10 +64,10 @@ export default async function BooksPage() {
               {[...books, ...taxOnly].map((r, i) => {
                 const fs = findingsFor(r.taxLines.map((l) => l.key));
                 return (
-                  <tr key={i} className={cn(r.kind === "income" && "font-medium")}>
-                    <td>
+                  <tr key={i} className={cn(r.kind === "income" && "bg-surface-2/40 font-medium", fs.some((f) => f.severity === "error") && "bg-danger-soft/10")}>
+                    <td className="min-w-[200px] pl-5">
                       <div>{r.label}</div>
-                      <div className="flex flex-wrap gap-x-2 text-[11px]">
+                      <div className="mt-0.5 flex flex-wrap gap-1 text-[11px]">
                         {r.bookValues.map((v) => (
                           <RefLink key={v.id} refId={v.id} href={documentHref(v.document_id, { page: v.page, value: v.id })} />
                         ))}
@@ -86,18 +87,21 @@ export default async function BooksPage() {
                       )}
                     </td>
                     <td className="num">{r.tax === null ? <span className="text-muted">—</span> : fmtNumber(r.tax)}</td>
-                    <td className={cn("num", Math.abs(r.difference) <= 1 ? "text-muted" : r.kind === "income" ? (r.difference > 0 ? "text-warn" : "") : r.difference < 0 ? "text-warn" : "")}>
-                      {Math.abs(r.difference) <= 1 ? "—" : (r.difference > 0 ? "+" : "") + fmtNumber(r.difference)}
+                    <td className="num">
+                      {Math.abs(r.difference) <= 1 ? (
+                        <span className="text-border-strong">—</span>
+                      ) : (
+                        <span className={cn("rounded-md px-1.5 font-mono text-[11.5px] font-medium leading-[18px] tabular-nums", (r.kind === "income" ? r.difference > 0 : r.difference < 0) ? "bg-warn-soft text-warn" : "bg-surface-2 text-foreground")}>{(r.difference > 0 ? "+" : "") + fmtNumber(r.difference)}</span>
+                      )}
                     </td>
-                    <td className="max-w-md">
-                      <div className="text-muted">{r.note}</div>
+                    <td className="max-w-[340px]">
+                      <div className="text-[12.5px] leading-5 text-muted">{r.note}</div>
                       {fs.length ? (
-                        <div className="mt-1 flex flex-wrap gap-1">
+                        <div className="mt-1 grid gap-1">
                           {fs.map((f) => (
-                            <RefLink key={f.id} refId={"check:" + f.id} className="font-sans">
-                              <Badge tone={f.severity === "error" ? "danger" : "warn"} dot>
-                                {f.title}
-                              </Badge>
+                            <RefLink key={f.id} refId={"check:" + f.id} plain className="flex items-start gap-1.5 text-[12px] hover:underline">
+                              <span className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", f.severity === "error" ? "bg-danger" : "bg-warn")} />
+                              <span className="line-clamp-1">{f.title}</span>
                             </RefLink>
                           ))}
                         </div>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { FindingRow } from "@/components/checks/finding-row";
 import { PageHeader } from "@/components/page-header";
 import { RefLink } from "@/components/ref-link";
-import { Badge, Card, KV, Stat } from "@/components/ui";
+import { Badge, Card, cn, KV, Stat } from "@/components/ui";
 import { runChecks } from "@/lib/checks/run";
 import { residentDays } from "@/lib/checks/state";
 import { makeContext } from "@/lib/checks/run";
@@ -53,6 +53,7 @@ export default async function StatePage() {
   return (
     <>
       <PageHeader
+        eyebrow="Workpapers"
         title="California split"
         description={
           "Part-year resident: California from " +
@@ -77,8 +78,11 @@ export default async function StatePage() {
                 <tr>
                   <th>Line</th>
                   {COLS.map((c) => (
-                    <th key={c} className="num">
-                      {c} · {COL_LABELS[c]}
+                    <th key={c} className={cn("num", c === "E" && "bg-accent-soft/40 text-foreground")}>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="flex h-4 w-4 items-center justify-center rounded bg-surface-3 font-mono text-[9.5px] normal-case text-muted">{c}</span>
+                        {COL_LABELS[c]}
+                      </span>
                     </th>
                   ))}
                   <th>Basis for E</th>
@@ -86,21 +90,21 @@ export default async function StatePage() {
               </thead>
               <tbody>
                 {ordered.map(([row, r]) => (
-                  <tr key={row} className={r.E && findingKeys.has(r.E.key) ? "is-active" : ""}>
-                    <td>
+                  <tr key={row} className={cn(r.E && findingKeys.has(r.E.key) && "bg-danger-soft/10")}>
+                    <td className="pl-5">
                       <div className="font-medium">{labelOf(r)}</div>
                       <div className="font-mono text-[11px] text-muted">line {row}</div>
                     </td>
                     {COLS.map((c) => {
                       const l = r[c];
                       return (
-                        <td key={c} className="num">
+                        <td key={c} className={cn("num", c === "E" && "bg-accent-soft/20")}>
                           {l ? (
-                            <RefLink refId={l.key} href={lineHref(l.key, version)} className={c === "E" ? "font-medium text-foreground" : "text-foreground"}>
+                            <RefLink refId={l.key} href={lineHref(l.key, version)} plain className={cn("tabular-nums hover:text-accent", c === "E" ? "font-semibold text-foreground" : c === "A" || c === "D" ? "text-foreground" : "text-muted")}>
                               {fmtLineValue(l.value)}
                             </RefLink>
                           ) : (
-                            <span className="text-muted">—</span>
+                            <span className="text-border-strong">—</span>
                           )}
                         </td>
                       );
@@ -108,7 +112,7 @@ export default async function StatePage() {
                     <td className="max-w-xs">
                       {r.E ? (
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="font-mono text-[11px] text-muted" title={packet.engine_reference.rules[r.E.rule]}>
+                          <span className="rounded-md bg-surface-2 px-1.5 font-mono text-[10.5px] leading-[18px] text-muted" title={packet.engine_reference.rules[r.E.rule]}>
                             {r.E.rule}
                           </span>
                           {findingKeys.has(r.E.key) ? (
@@ -144,8 +148,8 @@ export default async function StatePage() {
             <table className="tbl dense">
               <tbody>
                 {f540.map((l) => (
-                  <tr key={l.key}>
-                    <td className="w-10 font-mono text-[11px] text-muted">{l.line}</td>
+                  <tr key={l.key} className={cn(/^(64|78|97|35)$/.test(l.line) && "bg-surface-2/40 font-semibold")}>
+                    <td className="w-10 pl-5 font-mono text-[11px] font-normal text-muted">{l.line}</td>
                     <td>
                       <RefLink refId={l.key} href={lineHref(l.key, version)} plain className="text-foreground">
                         {l.label}

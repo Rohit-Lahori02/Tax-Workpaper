@@ -39,7 +39,7 @@ export function LotsTable({ rows, docTitles, version }: { rows: LotRow[]; docTit
   );
 
   const virtualizer = useVirtualizer({ count: shown.length, getScrollElement: () => parentRef.current, estimateSize: () => ROW, overscan: 12 });
-  const control = "h-8 rounded-full border border-border bg-surface px-3 text-[12px] outline-none focus:border-accent";
+  const control = "input h-8 w-auto py-0 text-[12px]";
   const grid = "grid grid-cols-[56px_minmax(220px,1fr)_100px_100px_110px_110px_90px_110px_120px] items-center gap-x-3 px-4";
 
   return (
@@ -63,10 +63,10 @@ export function LotsTable({ rows, docTitles, version }: { rows: LotRow[]; docTit
         </select>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter by security or date" aria-label="Filter lots" suppressHydrationWarning className={cn(control, "w-64")} />
         <span className="ml-auto text-[12px] text-muted">
-          {shown.length} of {rows.length} lots
+          <span className="font-medium tabular-nums text-foreground">{shown.length}</span> of {rows.length} lots
         </span>
       </div>
-      <div className={cn(grid, "border-b border-border py-2 text-[11px] font-medium uppercase tracking-[0.05em] text-muted")}>
+      <div className={cn(grid, "border-b border-border bg-surface-2/40 py-2 text-[11px] font-medium uppercase tracking-[0.06em] text-muted")}>
         <span>Box</span>
         <span>Security</span>
         <span>Acquired</span>
@@ -87,9 +87,9 @@ export function LotsTable({ rows, docTitles, version }: { rows: LotRow[]; docTit
                 className={cn(grid, "absolute left-0 right-0 border-b border-border text-[12.5px] hover:bg-surface-2")}
                 style={{ top: vi.start, height: ROW }}
               >
-                <span className="font-mono text-[11px] text-muted">{r.box}</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-surface-2 font-mono text-[10.5px] text-muted ring-1 ring-inset ring-border">{r.box}</span>
                 <span className="flex min-w-0 items-center gap-1.5">
-                  <Link href={lineHref(r.key, version)} className="truncate hover:underline" title={r.description}>
+                  <Link href={lineHref(r.key, version)} className="truncate font-medium hover:text-accent" title={r.description}>
                     {r.description}
                   </Link>
                   {r.supplemented ? <Badge tone="accent">supp.</Badge> : null}
@@ -100,10 +100,10 @@ export function LotsTable({ rows, docTitles, version }: { rows: LotRow[]; docTit
                 <span className="num">{r.proceeds === null ? "—" : fmtNumber(r.proceeds)}</span>
                 <span className="num">{r.basis === null ? "—" : fmtNumber(r.basis)}</span>
                 <span className="num text-muted">{r.adjustment ? fmtNumber(r.adjustment) : "—"}</span>
-                <span className={cn("num font-medium", r.gain < 0 ? "text-danger" : "")}>{fmtNumber(r.gain)}</span>
+                <span className={cn("num font-semibold", r.gain < 0 ? "text-danger" : r.gain > 0 ? "text-ok" : "text-muted")}>{fmtNumber(r.gain)}</span>
                 <span className="truncate font-mono text-[11px]">
                   {r.docId ? (
-                    <Link href={documentHref(r.docId, r.anchorValue ? { value: r.anchorValue } : {})} className="text-accent hover:underline">
+                    <Link href={documentHref(r.docId, r.anchorValue ? { value: r.anchorValue } : {})} className="ref">
                       {r.docId} · {r.lot}
                     </Link>
                   ) : (
@@ -115,7 +115,7 @@ export function LotsTable({ rows, docTitles, version }: { rows: LotRow[]; docTit
           })}
         </div>
       </div>
-      <div className={cn(grid, "border-t border-border py-2 text-[12.5px] font-medium")}>
+      <div className={cn(grid, "border-t border-border bg-surface-2/40 py-2.5 text-[12.5px] font-semibold")}>
         <span />
         <span className="text-muted">Shown total</span>
         <span />

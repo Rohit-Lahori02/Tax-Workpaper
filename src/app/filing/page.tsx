@@ -1,10 +1,10 @@
-import { CheckCircle2, FileWarning, OctagonAlert, RefreshCw, Send, ShieldAlert, Undo2 } from "lucide-react";
+import { Check, CheckCircle2, FileWarning, OctagonAlert, RefreshCw, Send, ShieldAlert, Undo2 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ActionForm } from "@/components/filing/action-form";
 import { PageHeader } from "@/components/page-header";
 import { RefLink } from "@/components/ref-link";
-import { Badge, Card, Empty, KV, Stat, type Tone } from "@/components/ui";
+import { Badge, Card, cn, Empty, KV, Stat, type Tone } from "@/components/ui";
 import { acknowledgeAction, correctionAction, extensionAction, openAmendmentAction, transmitAction } from "@/lib/facts/actions-filing";
 import { fmtBalance, fmtDate, fmtDateTime, fmtMoney } from "@/lib/format";
 import { maskSsn } from "@/lib/mask";
@@ -26,7 +26,13 @@ export default async function FilingPage() {
   const { filing, identity, packet, eff } = ctx;
   const ok = ctx.gates.filter((g) => g.ok).length;
   const ready = ok === ctx.gates.length;
-  const deadlines = packet.firm.deadlines.filter((d) => /due date/i.test(d.what));
+  const deadlines = packet.firm.deadlines.filter((d) => /due date/i.test(d.what) && !/outside engagement/i.test(d.what)).slice(0, 2);
+  const journey: { key: string; label: string; done: boolean; current: boolean; tone: Tone }[] = (() => {
+    const order = ["preparing", "transmitted", "acknowledged", "filed", "amended"] as const;
+    const at = filing.phase === "preparing" ? 0 : filing.phase === "transmitted" ? 1 : filing.phase === "rejected" ? 2 : filing.phase === "filed" ? 3 : 4;
+    const labels: Record<(typeof order)[number], string> = { preparing: "Prepare and sign", transmitted: "Transmit", acknowledged: filing.phase === "rejected" ? "Rejected" : "Acknowledged", filed: "Filed", amended: filing.phase === "amending" ? "Amending" : "Amended" };
+    return order.map((k, i) => ({ key: k, label: labels[k], done: i < at, current: i === at, tone: (k === "acknowledged" && filing.phase === "rejected" ? "danger" : i <= at ? "accent" : "neutral") as Tone }));
+  })();
   const extRef = packet.what_if.extension as Record<string, unknown>;
   const rates = packet.post_filing_rates as Record<string, unknown>;
   const mayFile = canFile(actor);
@@ -49,7 +55,8 @@ export default async function FilingPage() {
   return (
     <>
       <PageHeader
-        title="Filing"
+        eyebrow="Filing"
+        title="File and amend"
         description="From the extension to the acknowledgment and beyond. Every gate the firm puts between a prepared return and a filed one is computed; the transmission freezes the return; the agency's answer is simulated from the data exactly as the real e-file system would answer it."
         meta={
           <>
@@ -70,8 +77,20 @@ export default async function FilingPage() {
         }
       />
 
+      <ol className="card mb-4 grid grid-cols-5 divide-x divide-border overflow-hidden">
+        {journey.map((j, i) => (
+          <li key={j.key} className={cn("flex items-center gap-3 px-4 py-3", j.current && "bg-accent-soft/40")}>
+            <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-[11px] ring-1 ring-inset", j.done ? "bg-ok-soft text-ok ring-ok/25" : j.current ? (j.tone === "danger" ? "bg-danger-soft text-danger ring-danger/25" : "bg-accent text-accent-fg ring-accent") : "bg-surface-2 text-muted ring-border")}>{j.done ? <Check className="h-3.5 w-3.5" /> : i + 1}</span>
+            <span className="min-w-0">
+              <span className={cn("block truncate text-[12.5px] font-medium", !j.done && !j.current && "text-muted")}>{j.label}</span>
+              {j.current ? <span className="block text-[10.5px] uppercase tracking-[0.06em] text-muted">now</span> : null}
+            </span>
+          </li>
+        ))}
+      </ol>
+
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat label="Gates open" value={ok + " / " + ctx.gates.length} tone={ready ? "ok" : "danger"} />
+        <Stat label="Gates open" value={ok + " / " + ctx.gates.length} tone={ready ? "ok" : "danger"} hint={ready ? "ready to transmit" : ctx.gates.length - ok + " still closed"} />
         <Stat label="Working return" value={eff.version + (eff.adjustments.length ? " +" + eff.adjustments.length : "")} hint="version plus adjustments" />
         {deadlines.map((d) => (
           <Stat key={d.what} label={d.what.replace(/ - /, " · ")} value={fmtDate(d.date)} />
@@ -98,16 +117,34 @@ export default async function FilingPage() {
       ) : null}
 
       <div className="mt-4 grid gap-4 xl:grid-cols-3">
-        <Card title="Filing gates" description="None can be ticked by hand." className="xl:col-span-2" flush>
+        <Card
+          title="Filing gates"
+          description="None can be ticked by hand. Each is computed from the ledger and the firm's standards."
+          className="xl:col-span-2"
+          aside={
+            <span className="flex items-center gap-2">
+              <span className="h-1.5 w-24 overflow-hidden rounded-full bg-surface-2">
+                <span className={cn("block h-full rounded-full", ready ? "bg-ok" : "bg-accent")} style={{ width: Math.round((ok / ctx.gates.length) * 100) + "%" }} />
+              </span>
+              <span className="tabular-nums">
+                {ok} / {ctx.gates.length}
+              </span>
+            </span>
+          }
+          flush
+        >
           <ul className="divide-y divide-border">
-            {ctx.gates.map((g) => (
-              <li key={g.id} className="flex items-start gap-3 px-4 py-2.5">
-                {g.ok ? <CheckCircle2 className="mt-0.5 h-4 w-4 text-ok" /> : <OctagonAlert className="mt-0.5 h-4 w-4 text-danger" />}
+            {ctx.gates.map((g, i) => (
+              <li key={g.id} className={cn("flex items-start gap-3 px-5 py-3", !g.ok && "bg-danger-soft/10")}>
+                <span className={cn("mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ring-1 ring-inset", g.ok ? "bg-ok-soft text-ok ring-ok/25" : "bg-danger-soft text-danger ring-danger/25")}>{g.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <OctagonAlert className="h-3.5 w-3.5" />}</span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-medium">{g.label}</div>
-                  <p className="text-[12px] text-muted">{g.detail}</p>
+                  <div className="flex items-center gap-2 text-[13px] font-medium">
+                    <span className="font-mono text-[10.5px] text-muted">{i + 1}</span>
+                    {g.label}
+                  </div>
+                  <p className="mt-0.5 text-[12px] leading-5 text-muted">{g.detail}</p>
                 </div>
-                <Link href={g.href} className="text-[12px] text-accent hover:underline">
+                <Link href={g.href} className="pill h-7 px-2.5 text-[12px]">
                   open
                 </Link>
               </li>

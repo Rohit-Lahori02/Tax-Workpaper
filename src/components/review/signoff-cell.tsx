@@ -1,8 +1,8 @@
 "use client";
 
-import { CheckCircle2, PenLine, RotateCcw } from "lucide-react";
+import { CheckCircle2, Lock, PenLine, RotateCcw } from "lucide-react";
 import { useState, useTransition } from "react";
-import { Badge, cn } from "@/components/ui";
+import { cn } from "@/components/ui";
 import { signoffAction } from "@/lib/facts/actions-review";
 
 const fmtWhen = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "UTC" });
@@ -19,6 +19,11 @@ export interface SignoffCellData {
   reason: string | null;
 }
 
+/**
+ * One cell of the sign-off matrix. Quiet when there is nothing to do: a dash
+ * with the reason on hover. Loud only when the viewer can act or something
+ * reopened.
+ */
 export function SignoffCell({ cell }: { cell: SignoffCellData }) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -40,58 +45,78 @@ export function SignoffCell({ cell }: { cell: SignoffCellData }) {
     });
   };
 
-  return (
-    <div className="grid gap-1">
-      {cell.state === "valid" ? (
-        <div className="text-[12px]">
-          <Badge tone="ok">
-            <CheckCircle2 className="h-3 w-3" /> signed
-          </Badge>
-          <div className="mt-0.5 text-muted">
-            {cell.signer} · {cell.at ? fmtWhen.format(new Date(cell.at)) : ""}
-          </div>
-          <div className="font-mono text-[10px] text-muted">{cell.hash?.slice(0, 12)}</div>
-        </div>
-      ) : null}
-      {cell.state === "reopened" ? (
-        <div className="text-[12px]">
-          <Badge tone="warn">
-            <RotateCcw className="h-3 w-3" /> reopened
-          </Badge>
-          <div className="mt-0.5 text-muted">
-            {cell.signer} signed {cell.at ? fmtWhen.format(new Date(cell.at)) : ""}; since then {cell.changes.facts} new record{cell.changes.facts === 1 ? "" : "s"}
-            {cell.changes.lines.length ? ", " + cell.changes.lines.length + " line" + (cell.changes.lines.length === 1 ? "" : "s") + " changed" : ""}.
+  if (cell.state === "valid") {
+    return (
+      <div className="flex items-start gap-2">
+        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ok-soft text-ok ring-1 ring-inset ring-ok/20">
+          <CheckCircle2 className="h-3 w-3" />
+        </span>
+        <div className="min-w-0 text-[12px] leading-4">
+          <div className="font-medium">{cell.signer}</div>
+          <div className="text-muted">{cell.at ? fmtWhen.format(new Date(cell.at)) : ""}</div>
+          <div className="font-mono text-[10px] text-muted/80" title={cell.hash ?? undefined}>
+            {cell.hash?.slice(0, 10)}
           </div>
         </div>
-      ) : null}
-      {cell.state === "missing" ? <span className="text-[12px] text-muted">not signed</span> : null}
+      </div>
+    );
+  }
 
-      {cell.state !== "valid" ? (
-        cell.allowed ? (
-          open ? (
-            <div className="grid gap-1">
-              <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)" className="h-7 rounded-md border border-border bg-surface px-2 text-[12px] outline-none focus:border-accent" />
-              <div className="flex gap-1">
-                <button type="button" disabled={pending} onClick={sign} className={cn("inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[12px] font-medium text-accent-fg", pending && "opacity-50")}>
-                  <PenLine className="h-3 w-3" /> {cell.state === "reopened" ? "Re-sign" : "Sign as " + cell.level}
-                </button>
-                <button type="button" onClick={() => setOpen(false)} className="text-[12px] text-muted hover:text-foreground">
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button type="button" onClick={() => setOpen(true)} className="pill h-7 w-fit px-2.5 text-[12px]">
-              <PenLine className="h-3 w-3" /> {cell.state === "reopened" ? "Re-sign" : "Sign off"}
+  const action =
+    cell.allowed ? (
+      open ? (
+        <div className="mt-1.5 grid gap-1.5">
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)" className="input h-7 py-0 text-[12px]" />
+          <div className="flex items-center gap-2">
+            <button type="button" disabled={pending} onClick={sign} className={cn("pill primary h-7 px-2.5 text-[12px]", pending && "opacity-50")}>
+              <PenLine className="h-3 w-3" /> {cell.state === "reopened" ? "Re-sign" : "Sign as " + cell.level}
             </button>
-          )
-        ) : cell.reason ? (
-          <span className="text-[11px] text-muted" title={cell.reason}>
-            {cell.reason}
-          </span>
-        ) : null
-      ) : null}
-      {error ? <span className="text-[11px] text-danger">{error}</span> : null}
+            <button type="button" onClick={() => setOpen(false)} className="text-[11.5px] text-muted hover:text-foreground">
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" onClick={() => setOpen(true)} className={cn("pill h-7 w-fit px-2.5 text-[12px]", cell.state === "missing" && "mt-0")}>
+          <PenLine className="h-3 w-3" /> {cell.state === "reopened" ? "Re-sign" : "Sign off"}
+        </button>
+      )
+    ) : null;
+
+  if (cell.state === "reopened") {
+    return (
+      <div className="flex items-start gap-2">
+        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-warn-soft text-warn ring-1 ring-inset ring-warn/25">
+          <RotateCcw className="h-3 w-3" />
+        </span>
+        <div className="min-w-0 text-[12px] leading-4">
+          <div className="font-medium text-warn">Reopened</div>
+          <div className="text-muted">
+            {cell.signer} signed {cell.at ? fmtWhen.format(new Date(cell.at)) : ""}
+          </div>
+          <div className="text-muted">
+            since then {cell.changes.facts} new record{cell.changes.facts === 1 ? "" : "s"}
+            {cell.changes.lines.length ? ", " + cell.changes.lines.length + " line" + (cell.changes.lines.length === 1 ? "" : "s") + " changed" : ""}
+          </div>
+          {action}
+          {error ? <div className="text-[11px] text-danger">{error}</div> : null}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start gap-2" title={cell.reason ?? undefined}>
+      {cell.allowed ? (
+        <div className="grid gap-1">
+          {action}
+          {error ? <div className="text-[11px] text-danger">{error}</div> : null}
+        </div>
+      ) : (
+        <span className="inline-flex items-center gap-1.5 text-[12px] text-muted/70">
+          <Lock className="h-3 w-3" /> not signed
+        </span>
+      )}
     </div>
   );
 }

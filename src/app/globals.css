@@ -146,6 +146,44 @@ pre,
   outline-offset: 1px;
   border-radius: 6px;
 }
+:focus:not(:focus-visible) {
+  outline: none;
+}
+/* Controls with their own shape keep it; the ring follows the shape. */
+.pill:focus-visible,
+.chip:focus-visible,
+.seg-item:focus-visible,
+.icon-btn:focus-visible,
+.ref:focus-visible,
+.nav-item:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+.input:focus-visible {
+  outline: none;
+}
+tr:focus-within > td:first-child,
+li:focus-within > a:first-child {
+  position: relative;
+}
+/* Skip link for keyboard users, visible only when focused. */
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -40px;
+  z-index: 50;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: top 0.12s ease;
+}
+.skip-link:focus {
+  top: 12px;
+}
 
 ::selection {
   background: var(--accent-soft);
@@ -471,6 +509,22 @@ textarea {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .fade-up {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @keyframes fade-up {
   from {
     opacity: 0;
@@ -487,24 +541,102 @@ textarea {
 
 /* ---------- Print: the client copy and notice packages ---------- */
 @media print {
+  @page {
+    margin: 14mm 12mm;
+  }
+  :root,
+  :root[data-theme="dark"] {
+    /* Paper is light whatever the screen theme. */
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f4f5f7;
+    --surface-3: #e9ebef;
+    --fg: #111318;
+    --muted: #555b66;
+    --border: #d5d8de;
+    --border-strong: #b9bec7;
+    --sidebar: #ffffff;
+    --card-inset: none;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #111318 !important;
+    font-size: 11.5px;
+  }
   aside,
   header.sticky,
-  .print\:hidden {
+  nav,
+  form,
+  button,
+  .print\:hidden,
+  .pill,
+  .icon-btn,
+  .seg,
+  .chip,
+  [data-live],
+  .skip-link {
     display: none !important;
   }
   main {
     padding: 0 !important;
-  }
-  body {
-    background: #fff;
-    color: #111;
+    max-width: none !important;
   }
   .card {
-    box-shadow: none;
+    box-shadow: none !important;
+    border: 1px solid var(--border) !important;
+    background: #fff !important;
     break-inside: avoid;
+  }
+  .fade-up {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .tbl th {
+    position: static;
+  }
+  thead {
+    display: table-header-group;
+  }
+  tr,
+  li {
+    break-inside: avoid;
+  }
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+  .truncate,
+  .line-clamp-1,
+  .line-clamp-2 {
+    overflow: visible !important;
+    white-space: normal !important;
+    display: block !important;
+    -webkit-line-clamp: unset !important;
+  }
+  .scroll-thin,
+  .overflow-auto,
+  .overflow-x-auto {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+  .sticky {
+    position: static !important;
   }
   a {
     color: inherit;
     text-decoration: none;
+  }
+  .ref {
+    border: 0;
+    background: none;
+    padding: 0;
+  }
+  mark.ev {
+    background: none;
+    box-shadow: inset 0 -1px 0 #111;
+    color: inherit;
   }
 }

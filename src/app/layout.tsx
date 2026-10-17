@@ -44,6 +44,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang="en" className="h-full" data-theme={theme} suppressHydrationWarning>
       <body className="min-h-full">
+        <a href="#main" className="skip-link">
+          Skip to content
+        </a>
         <div className="flex min-h-screen">
           <Sidebar
             firm={packet.firm.name}
@@ -70,7 +73,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 <AlertTriangle className="h-3.5 w-3.5" /> {ledgerError}
               </div>
             ) : null}
-            <main className="w-full flex-1 px-6 py-6 lg:px-8 2xl:px-10">{children}</main>
+            <main id="main" tabIndex={-1} className="w-full flex-1 px-6 py-6 outline-none lg:px-8 2xl:px-10">{children}</main>
           </div>
         </div>
       </body>

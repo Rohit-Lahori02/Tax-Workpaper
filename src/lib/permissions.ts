@@ -26,3 +26,8 @@ export const canSeeLedger = (a: ActorLite) => a.kind === "staff";
 /** Changing a number on the return is preparer-and-above work; the client never does it. */
 export const canAdjust = (a: ActorLite) => a.kind === "staff" && PREP_ROLES.has(a.role);
 export const canUndoBatch = (a: ActorLite, authorIds: string[]) => a.role === "partner" || authorIds.every((id) => id === a.id);
+/** Partners and the firm administrator decide who works on what. */
+export const canAssign = (a: ActorLite) => a.kind === "staff" && (a.role === "partner" || a.role === "firm_administrator");
+export const canRequestApproval = (a: ActorLite) => a.kind === "staff" && PREP_ROLES.has(a.role);
+export const canClientApprove = (a: ActorLite) => a.kind === "client";
+export const canApproveAdjustment = (a: ActorLite) => a.kind === "staff" && a.role === "partner";

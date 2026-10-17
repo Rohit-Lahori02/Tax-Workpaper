@@ -269,6 +269,36 @@ function FactItem({ f, actor, staff }: { f: FactView; actor: ActorLite; staff: S
                 {typeof f.body.text === "string" && f.body.text ? <span className="text-muted">{f.body.text}</span> : null}
               </div>
             ) : null}
+            {f.kind === "signoff" ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge tone="ok">
+                  <CheckCircle2 className="h-3 w-3" /> signed off · {String(f.body.level ?? "")}
+                </Badge>
+                <span className="font-mono text-[11px] text-muted">{String(f.body.hash ?? "").slice(0, 12)}</span>
+                {typeof f.body.text === "string" && f.body.text ? <span className="text-muted">{f.body.text}</span> : null}
+              </div>
+            ) : null}
+            {f.kind === "assignment" ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge tone="accent">assigned · {String(f.body.role ?? "")}</Badge>
+                <span>{staff.find((s) => s.id === f.body.assigneeId)?.name ?? String(f.body.assigneeId ?? "")}</span>
+                {typeof f.body.due === "string" ? <span className="text-muted">due {f.body.due}</span> : null}
+              </div>
+            ) : null}
+            {f.kind === "approval_request" ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge tone="accent">sent to client for approval</Badge>
+                {typeof f.body.message === "string" && f.body.message ? <span className="text-muted">{f.body.message}</span> : null}
+              </div>
+            ) : null}
+            {f.kind === "approval" ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge tone="ok">client approved and signed</Badge>
+                <span className="text-muted">
+                  as {String(f.body.signerName ?? "")} · PIN ···{String(f.body.pinHint ?? "")} · {String(f.body.version ?? "")}
+                </span>
+              </div>
+            ) : null}
             {f.kind === "attachment" ? (
               <div className="flex flex-wrap items-center gap-2">
                 <a

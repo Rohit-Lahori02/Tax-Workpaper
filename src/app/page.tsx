@@ -12,6 +12,7 @@ import { decisionPoints, documentAccounting, dueDiligenceItems, requiredSteps, v
 import { effectiveReturn } from "@/lib/effective";
 import { getLedger } from "@/lib/facts/repo";
 import { KIND_LABELS, type FactKind } from "@/lib/facts/types";
+import { getReviewContext } from "@/lib/review";
 import { documentRows } from "@/lib/packet/documents";
 import { getPacket } from "@/lib/packet/load";
 import { logSensitiveView } from "@/lib/sensitive";
@@ -27,7 +28,9 @@ function delta(current: number, previous: number | undefined, label: string): { 
 
 export default async function OverviewPage() {
   const { packet, index } = getPacket();
-  const [{ actor, reveal }, { ledger }] = await Promise.all([getViewer(), getLedger()]);
+  const [{ actor, reveal }, { ledger }, review] = await Promise.all([getViewer(), getLedger(), getReviewContext()]);
+  const gatesOpen = review.gates.filter((g) => g.ok).length;
+  const returnSignoffs = review.statuses.filter((s) => s.scope.id === "return");
   if (reveal) {
     logSensitiveView(
       actor,
@@ -254,6 +257,36 @@ export default async function OverviewPage() {
               ]}
             />
           </div>
+        </Card>
+
+        <Card
+          title="Review and filing"
+          description={gatesOpen + " of " + review.gates.length + " filing gates open."}
+          aside={
+            <Link href="/filing" className="text-accent hover:underline">
+              Filing
+            </Link>
+          }
+        >
+          <ul className="grid gap-2 text-[13px]">
+            {returnSignoffs.map((s) => (
+              <li key={s.level} className="flex items-center justify-between gap-2">
+                <span className="capitalize">{s.level} sign-off · whole return</span>
+                <Badge tone={s.state === "valid" ? "ok" : s.state === "reopened" ? "warn" : "neutral"} dot>
+                  {s.state === "valid" ? s.fact?.actorName : s.state}
+                </Badge>
+              </li>
+            ))}
+            <li className="flex items-center justify-between gap-2 border-t border-border pt-2">
+              <span>Client approval</span>
+              <Badge tone={review.client.complete ? "ok" : review.client.request ? "accent" : "neutral"} dot>
+                {review.client.complete ? "both signed" : review.client.request ? "sent" : "not sent"}
+              </Badge>
+            </li>
+          </ul>
+          <Link href="/review" className="mt-3 inline-block text-[12px] text-accent hover:underline">
+            Sign-off matrix
+          </Link>
         </Card>
 
         <Card

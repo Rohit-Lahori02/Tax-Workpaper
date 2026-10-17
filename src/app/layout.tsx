@@ -2,14 +2,15 @@ import { AlertTriangle } from "lucide-react";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
+import { LiveRefresh } from "@/components/live/live-refresh";
 import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
-import { runChecks } from "@/lib/checks/run";
 import { factsSince, lastSeenSeq } from "@/lib/effective";
 import { getLedger } from "@/lib/facts/repo";
 import { fmtDate } from "@/lib/format";
 import { getPacket } from "@/lib/packet/load";
 import { canReveal, canSeeLedger } from "@/lib/permissions";
+import { getReviewContext, needsYou } from "@/lib/review";
 import { getReveal, getCurrentActor, listActors } from "@/lib/session";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const { packet, index } = getPacket();
   const actor = await getCurrentActor();
-  const [reveal, { ledger, error: ledgerError }, jar] = await Promise.all([getReveal(actor), getLedger(), cookies()]);
+  const [reveal, { ledger, error: ledgerError }, jar, review] = await Promise.all([getReveal(actor), getLedger(), cookies(), getReviewContext()]);
   // The theme choice lives in a cookie so the server renders it: no inline script, no flash.
   const themeCookie = jar.get("wp-theme")?.value;
   const theme = themeCookie === "light" || themeCookie === "dark" ? themeCookie : undefined;
@@ -36,6 +37,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     (q) => !q.retracted && q.answers.every((a) => a.retracted) && (actor.kind === "staff" || q.body.to === "client"),
   ).length;
   const unseen = factsSince(ledger, lastSeenSeq(ledger, actor.id), actor.id).length;
+  const work = needsYou(review, actor).length;
+  const latestSeq = ledger.all.length ? ledger.all[ledger.all.length - 1].seq : 0;
 
   return (
     <html lang="en" className="h-full" data-theme={theme} suppressHydrationWarning>
@@ -45,8 +48,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             firm={packet.firm.name}
             showLedger={canSeeLedger(actor)}
             openQuestions={openQuestions}
-            checkErrors={runChecks(packet, index).counts.error}
+            checkErrors={review.checks.counts.error}
             unseen={unseen}
+            work={work}
             client={{
               name: packet.packet.name.replace(/ - tax year \d{4}$/, ""),
               clientId: packet.packet.client_id,
@@ -58,7 +62,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             }}
           />
           <div className="flex min-w-0 flex-1 flex-col">
-            <Topbar actors={actors} actor={actor} revealEligible={canReveal(actor)} revealOn={reveal} unseen={unseen} />
+            <Topbar actors={actors} actor={actor} revealEligible={canReveal(actor)} revealOn={reveal} unseen={unseen} live={<LiveRefresh initialSeq={latestSeq} />} />
             {ledgerError ? (
               <div className="flex items-center gap-2 border-b border-warn/30 bg-warn-soft px-6 py-2 text-[12.5px] text-warn lg:px-8">
                 <AlertTriangle className="h-3.5 w-3.5" /> {ledgerError}

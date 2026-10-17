@@ -15,6 +15,10 @@ export const FACT_KINDS = [
   "judgment",
   "disposition",
   "step",
+  "signoff",
+  "assignment",
+  "approval_request",
+  "approval",
 ] as const;
 export type FactKind = (typeof FACT_KINDS)[number];
 
@@ -32,6 +36,10 @@ export const KIND_LABELS: Record<FactKind, string> = {
   judgment: "Judgment recorded",
   disposition: "Document disposition",
   step: "Required step",
+  signoff: "Signed off",
+  assignment: "Assigned",
+  approval_request: "Sent to client for approval",
+  approval: "Client approved and signed",
 };
 
 export const JUDGMENT_TYPES = [
@@ -148,6 +156,50 @@ export const StepBody = z.object({
   text: z.string().trim().max(4000).optional(),
 });
 export type StepBody = z.infer<typeof StepBody>;
+
+export const SignoffBody = z.object({
+  /** preparer | reviewer | partner, from the firm's review levels. */
+  level: z.string().min(1),
+  /** area:<id> | return | fact:<adjustment id> */
+  scope: z.string().min(1),
+  /** SHA-256 of what was signed; the sign-off reopens when it no longer matches. */
+  hash: z.string().length(64),
+  /** Snapshot summary for showing what changed later. */
+  snapshot: z.object({
+    facts: z.number().int(),
+    lines: z.record(z.string(), z.union([z.number(), z.string()])),
+    adjustments: z.number().int(),
+  }),
+  text: z.string().trim().max(4000).optional(),
+});
+export type SignoffBody = z.infer<typeof SignoffBody>;
+
+export const AssignmentBody = z.object({
+  /** preparer | reviewer | partner */
+  role: z.string().min(1),
+  assigneeId: z.string().min(1),
+  due: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  text: z.string().trim().max(1000).optional(),
+});
+export type AssignmentBody = z.infer<typeof AssignmentBody>;
+
+export const ApprovalRequestBody = z.object({
+  hash: z.string().length(64),
+  message: z.string().trim().max(4000).optional(),
+});
+
+export const ApprovalBody = z.object({
+  hash: z.string().length(64),
+  signerName: z.string().trim().min(2).max(200),
+  /** Last two digits only; the full self-selected PIN is never stored here. */
+  pinHint: z.string().length(2),
+  consent: z.literal(true),
+  federalBalance: z.number(),
+  californiaBalance: z.number(),
+  version: z.string(),
+  adjustments: z.number().int(),
+});
+export type ApprovalBody = z.infer<typeof ApprovalBody>;
 
 export type VerificationBody = z.infer<typeof VerificationBody>;
 export type NoteBody = z.infer<typeof NoteBody>;

@@ -7,15 +7,19 @@ import {
   CalendarClock,
   ClipboardCheck,
   Files,
+  FileSignature,
   FileSpreadsheet,
   FlaskConical,
   Gavel,
   GitCompare,
   History,
+  Inbox,
   LayoutDashboard,
   ListChecks,
   Map,
   MessageCircleQuestion,
+  PenLine,
+  Send,
   ShieldCheck,
   TrendingUp,
 } from "lucide-react";
@@ -33,20 +37,29 @@ export interface SidebarClient {
   warnings: number;
 }
 
-type Item = { href: string; label: string; icon: typeof Files; exact?: boolean; ledger?: boolean; badge?: "questions" | "checks" | "unseen" };
+type Item = { href: string; label: string; icon: typeof Files; exact?: boolean; ledger?: boolean; badge?: "questions" | "checks" | "unseen" | "work" };
 
 const SECTIONS: { label: string | null; items: Item[] }[] = [
-  { label: null, items: [{ href: "/", label: "Overview", icon: LayoutDashboard, exact: true }] },
+  {
+    label: null,
+    items: [
+      { href: "/", label: "Overview", icon: LayoutDashboard, exact: true },
+      { href: "/work", label: "My work", icon: Inbox, badge: "work" },
+    ],
+  },
   {
     label: "Review",
     items: [
       { href: "/return", label: "Return", icon: FileSpreadsheet },
       { href: "/documents", label: "Documents", icon: Files },
-      { href: "/checks", label: "Checks", icon: ListChecks, badge: "checks" },
+      { href: "/checks", label: "Checks", icon: ListChecks, badge: "checks", ledger: true },
       { href: "/compare", label: "Compare", icon: GitCompare, ledger: true },
       { href: "/what-ifs", label: "What-ifs", icon: FlaskConical, ledger: true },
       { href: "/judgment", label: "Judgment", icon: Gavel, ledger: true },
       { href: "/completeness", label: "Completeness", icon: ClipboardCheck, ledger: true },
+      { href: "/review", label: "Sign-offs", icon: PenLine, ledger: true },
+      { href: "/approve", label: "Client approval", icon: FileSignature },
+      { href: "/filing", label: "Filing", icon: Send, ledger: true },
     ],
   },
   {
@@ -79,6 +92,7 @@ export function Sidebar({
   openQuestions,
   checkErrors,
   unseen,
+  work,
 }: {
   firm: string;
   client: SidebarClient;
@@ -86,9 +100,10 @@ export function Sidebar({
   openQuestions: number;
   checkErrors: number;
   unseen: number;
+  work: number;
 }) {
   const pathname = usePathname();
-  const badge = (b: Item["badge"]) => (b === "questions" ? openQuestions : b === "checks" ? checkErrors : b === "unseen" ? unseen : 0);
+  const badge = (b: Item["badge"]) => (b === "questions" ? openQuestions : b === "checks" ? checkErrors : b === "unseen" ? unseen : b === "work" ? work : 0);
   return (
     <aside className="sticky top-0 hidden h-screen w-[236px] shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
       <div className="flex items-center gap-2.5 px-4 pb-3 pt-4">
@@ -124,7 +139,7 @@ export function Sidebar({
                       <Icon className={cn("h-4 w-4", active ? "text-accent" : "")} strokeWidth={1.75} />
                       {item.label}
                       {n > 0 ? (
-                        <span className={cn("ml-auto rounded-full px-1.5 text-[10px] font-semibold leading-4", item.badge === "checks" ? "bg-danger-soft text-danger" : item.badge === "unseen" ? "bg-accent-soft text-accent" : "bg-accent text-accent-fg")}>
+                        <span className={cn("ml-auto rounded-full px-1.5 text-[10px] font-semibold leading-4", item.badge === "checks" ? "bg-danger-soft text-danger" : item.badge === "unseen" ? "bg-accent-soft text-accent" : item.badge === "work" ? "bg-warn-soft text-warn" : "bg-accent text-accent-fg")}>
                           {n}
                         </span>
                       ) : null}

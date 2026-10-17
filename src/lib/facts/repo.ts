@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, max } from "drizzle-orm";
 import { cache } from "react";
 import { getDb, hasDatabase } from "@/db/client";
 import { blobs, facts, type Blob, type Fact, type NewFact } from "@/db/schema";
@@ -32,6 +32,15 @@ export const getLedger = cache(async (): Promise<LedgerState> => {
     return { ledger: buildLedger([], actors), error: "The ledger database is unreachable. Showing the packet only." };
   }
 });
+
+/** Highest sequence number in the ledger, for cheap change detection. */
+export async function maxSeq(): Promise<number> {
+  if (!hasDatabase()) return 0;
+  const clientId = getPacket().packet.packet.client_id;
+  const rows = await getDb().select({ m: max(facts.seq) }).from(facts).where(eq(facts.clientId, clientId));
+  const m = rows[0]?.m;
+  return m === null || m === undefined ? 0 : Number(m);
+}
 
 type FactInput = Omit<NewFact, "id" | "seq" | "at" | "clientId">;
 

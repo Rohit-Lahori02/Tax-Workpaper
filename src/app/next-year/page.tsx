@@ -1,10 +1,10 @@
-import { ArrowRight, CalendarRange } from "lucide-react";
+import { ArrowRight, CalendarRange, MoveRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActionForm } from "@/components/filing/action-form";
 import { PageHeader } from "@/components/page-header";
-import { Badge, Card, Empty, KV, Stat } from "@/components/ui";
+import { Badge, Card, cn, Empty, KV, Stat } from "@/components/ui";
 import { rollforwardAction } from "@/lib/facts/actions-filing";
 import { fmtDate, fmtDateTime, fmtMoney, fmtPct } from "@/lib/format";
 import { canRollForward, canSeeLedger } from "@/lib/permissions";
@@ -32,6 +32,7 @@ export default async function NextYearPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Filing"
         title={"Carry forward to " + (year + 1)}
         description="What the next preparer opens this file to find: every amount that carries, where it came from this year and where it lands next year; the basis questions still open; and the estimates that keep the household inside the safe harbor."
         meta={
@@ -70,17 +71,20 @@ export default async function NextYearPage() {
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} className={typeof r.value === "number" && r.value === 0 && r.openedWith === null ? "text-muted" : ""}>
+                {/* zero-with-nothing-in rows stay muted so the eye lands on amounts that move */}
                 <td>
                   {r.label}
                   {r.note ? <div className="text-[11.5px] text-muted">{r.note}</div> : null}
                 </td>
-                <td className="capitalize">{r.jurisdiction}</td>
-                <td className="text-right tabular-nums">{r.openedWith !== null ? fmtMoney(r.openedWith) : "—"}</td>
+                <td>
+                  <span className={cn("rounded-md px-1.5 py-0.5 text-[11px] capitalize", r.jurisdiction === "federal" ? "bg-accent-soft text-accent" : "bg-warn-soft text-warn")}>{r.jurisdiction}</span>
+                </td>
+                <td className="text-right tabular-nums text-muted">{r.openedWith !== null ? fmtMoney(r.openedWith) : <span className="text-border-strong">—</span>}</td>
                 <td className="text-right tabular-nums font-medium">{typeof r.value === "number" ? fmtMoney(r.value) : String(r.value)}</td>
                 <td>
                   {r.from.length ? (
                     r.from.map((k) => (
-                      <Link key={k} href={k.startsWith("asset:") ? hrefFor(k) : lineHref(k)} className="mr-1.5 font-mono text-[11.5px] text-accent hover:underline">
+                      <Link key={k} href={k.startsWith("asset:") ? hrefFor(k) : lineHref(k)} className="ref mr-1">
                         {k}
                       </Link>
                     ))
@@ -88,7 +92,12 @@ export default async function NextYearPage() {
                     <span className="text-muted">engine</span>
                   )}
                 </td>
-                <td className="text-muted">{r.to}</td>
+                <td className="text-muted">
+                  <span className="inline-flex items-center gap-1.5">
+                    <MoveRight className="h-3 w-3 text-border-strong" />
+                    {r.to}
+                  </span>
+                </td>
               </tr>
             ))}
           </tbody>

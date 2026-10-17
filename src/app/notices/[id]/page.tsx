@@ -39,7 +39,15 @@ export default async function NoticePage({ params }: { params: Promise<{ id: str
   return (
     <>
       <PageHeader
-        eyebrow={<Link href="/notices" className="hover:underline">Notices</Link>}
+        eyebrow={
+          <span className="flex items-center gap-1.5">
+            <Link href="/notices" className="hover:text-foreground">
+              Notices
+            </Link>
+            <span className="text-border-strong">/</span>
+            <span className="font-mono">{notice.id}</span>
+          </span>
+        }
         title={notice.agency + " " + notice.type}
         description={"Tax year " + notice.tax_year + ", dated " + fmtDate(notice.dated) + (notice.response_due ? ", response due " + fmtDate(notice.response_due) : "") + ". The package below is assembled from the workpaper: nothing in it was typed for the occasion."}
         meta={
@@ -73,10 +81,23 @@ export default async function NoticePage({ params }: { params: Promise<{ id: str
 
       {pkg.items.length && !notice.status ? (
         <>
-          <Card title="Cover letter" description="Draft, for the signing preparer's edits.">
-            <div className="max-w-3xl text-[13px] leading-6">
-              <p className="text-muted">{firm.name} · {String(identity.address ?? "")} · {String(identity.phone ?? "")}</p>
-              <p className="mt-3">{fmtDate(now.iso)}</p>
+          <Card title="Cover letter" description="Draft, for the signing preparer's edits." aside={<Badge tone="neutral">page 1 of the package</Badge>} flush>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-2/50 px-6 py-3">
+              <span className="flex items-center gap-2.5">
+                <span className="brand-mark flex h-7 w-7 items-center justify-center rounded-lg text-[12px] font-bold text-white">{firm.name.slice(0, 1)}</span>
+                <span className="leading-tight">
+                  <span className="block text-[13px] font-semibold">{firm.name}</span>
+                  <span className="block text-[11.5px] text-muted">
+                    {String(identity.address ?? "")} · {String(identity.phone ?? "")}
+                  </span>
+                </span>
+              </span>
+              <span className="text-right text-[11.5px] text-muted">
+                <span className="block font-medium text-foreground">{fmtDate(now.iso)}</span>
+                EIN {String(identity.ein ?? "")}
+              </span>
+            </div>
+            <div className="max-w-3xl px-6 py-5 text-[13.5px] leading-6">
               <p className="mt-3">Re: {notice.type}, tax year {notice.tax_year}, {taxpayers}</p>
               <p className="mt-3">
                 We represent the taxpayers under the enclosed authorization and respond to your letter dated {fmtDate(notice.dated)}. For each item under examination we set out the position taken on the return{asFiled ? " as filed (" + String(asFiled.fact.body.version) + ", submission " + asFiled.submissionId + ")" : ""}, the records that substantiate it, and where our own review found a correction to be made, that correction.
@@ -87,12 +108,26 @@ export default async function NoticePage({ params }: { params: Promise<{ id: str
                 </p>
               ))}
               <p className="mt-3">The exhibits are listed and attached in order. Please direct questions to the undersigned.</p>
+              <p className="mt-6 text-muted">Sincerely,</p>
+              <p className="mt-4 font-medium">{firm.staff.find((s) => s.id === identity.paid_preparer_signing_returns)?.name ?? firm.name}</p>
+              <p className="text-[12px] text-muted">{firm.name}</p>
             </div>
           </Card>
 
           {pkg.items.map((it) => (
-            <Card key={it.n} className="mt-4" title={"Item " + it.n + ": " + it.text} description={"Topic: " + it.topic.replace(/_/g, " ")}>
-              <div className="grid gap-4 xl:grid-cols-2">
+            <Card
+              key={it.n}
+              className="mt-4"
+              title={
+                <span className="flex items-start gap-2.5">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent-soft font-mono text-[11px] font-semibold text-accent ring-1 ring-inset ring-accent/25">{it.n}</span>
+                  <span>{it.text}</span>
+                </span>
+              }
+              description={"Topic: " + it.topic.replace(/_/g, " ") + " · " + it.exhibits.length + " exhibit" + (it.exhibits.length === 1 ? "" : "s") + " · " + it.record.length + " firm record" + (it.record.length === 1 ? "" : "s")}
+              aside={<Badge tone={it.exposure.some((x) => (x.federal ?? 0) > 0) ? "warn" : "ok"} dot>{it.exposure.some((x) => (x.federal ?? 0) > 0) ? "exposure" : "no exposure expected"}</Badge>}
+            >
+              <div className="grid gap-6 xl:grid-cols-2">
                 <div>
                   <h4 className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted">Return lines</h4>
                   <table className="tbl text-[12.5px]">
@@ -161,14 +196,18 @@ export default async function NoticePage({ params }: { params: Promise<{ id: str
                 <div>
                   <h4 className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted">Exhibits</h4>
                   {it.exhibits.length ? (
-                    <ul className="grid gap-1.5 text-[12.5px]">
+                    <ul className="divide-y divide-border/70 rounded-lg border border-border">
                       {it.exhibits.map((e) => (
-                        <li key={e.id} className="flex flex-wrap items-baseline gap-x-2">
-                          <span className="font-medium">{e.label}</span>
-                          <RefLink refId={e.documentId} href={documentHref(e.documentId, { page: e.pages[0] })} />
-                          <span className="text-muted">
-                            {e.title}
-                            {e.pages.length ? " · page" + (e.pages.length === 1 ? " " : "s ") + e.pages.join(", ") : ""}
+                        <li key={e.id} className="flex items-start gap-3 px-3 py-2 text-[12.5px]">
+                          <span className="mt-px flex h-6 min-w-[28px] shrink-0 items-center justify-center rounded-md bg-surface-2 px-1.5 font-mono text-[11px] font-semibold ring-1 ring-inset ring-border">{e.label.replace("Exhibit ", "")}</span>
+                          <span className="min-w-0 flex-1">
+                            <span className="flex flex-wrap items-center gap-1.5">
+                              <RefLink refId={e.documentId} href={documentHref(e.documentId, { page: e.pages[0] })} />
+                              <Link href={documentHref(e.documentId, { page: e.pages[0] })} className="font-medium hover:text-accent">
+                                {e.title}
+                              </Link>
+                            </span>
+                            {e.pages.length ? <span className="block text-[11.5px] text-muted">{"page" + (e.pages.length === 1 ? " " : "s ") + e.pages.join(", ")}</span> : null}
                           </span>
                         </li>
                       ))}
@@ -177,7 +216,7 @@ export default async function NoticePage({ params }: { params: Promise<{ id: str
                     <Empty>No documents in the file support this item.</Empty>
                   )}
 
-                  <h4 className="mb-1.5 mt-4 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted">The firm&apos;s own record</h4>
+                  <h4 className="mb-1.5 mt-5 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted">The firm&apos;s own record</h4>
                   {it.record.length ? (
                     <ul className="grid gap-1 text-[12.5px]">
                       {it.record.map((f) => (
@@ -188,10 +227,10 @@ export default async function NoticePage({ params }: { params: Promise<{ id: str
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-[12.5px] text-muted">No verification, note or adjustment was recorded on these lines or documents. The examiner will ask why.</p>
+                    <p className="rounded-lg border border-dashed border-warn/40 bg-warn-soft/30 px-3 py-2 text-[12.5px] leading-5 text-warn">No verification, note or adjustment was recorded on these lines or documents. The examiner will ask why.</p>
                   )}
 
-                  <h4 className="mb-1.5 mt-4 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted">Exposure</h4>
+                  <h4 className="mb-1.5 mt-5 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted">Exposure</h4>
                   <ul className="grid gap-1.5 text-[12.5px]">
                     {it.exposure.map((x, i) => (
                       <li key={i} className="flex items-start gap-2">

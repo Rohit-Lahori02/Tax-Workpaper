@@ -172,7 +172,8 @@ export function noticePackage(packet: Packet, index: PacketIndex, ledger: Ledger
         const w = eff.lines.get("F8283.A1.vehicle");
         exposure.push({
           text: "Vehicle deduction claimed at " + vehicleClaimed.toLocaleString("en-US") + " (client's Kelley Blue Book estimate) against gross proceeds of " + proceeds.value.toLocaleString("en-US") + " on Form 1098-C box 4c. Section 170(f)(12) limits the deduction to the proceeds." + (w && w.kind === "adjusted" ? " Already corrected in the working return." : " Not yet corrected."),
-          federal: Math.round(over * (index.versions.get(index.latestVersion)!.tax_effect_rates.itemized?.federal_per_dollar ?? 0)),
+          // Removing an overstated deduction raises tax: the per-dollar rate for a deduction is negative, so flip it.
+          federal: -Math.round(over * (index.versions.get(index.latestVersion)!.tax_effect_rates.itemized?.federal_per_dollar ?? 0)),
         });
       }
       if (stockFmv !== null) exposure.push({ text: "Stock gift of " + stockFmv.toLocaleString("en-US") + " is supported by the acknowledgment; no exposure expected.", federal: 0 });

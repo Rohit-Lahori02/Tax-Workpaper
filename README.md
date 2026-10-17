@@ -43,6 +43,12 @@ vercel --prod
 
 The ledger schema is already applied to the Neon database (`drizzle/0000_fancy_red_shift.sql`); a fresh database needs `pnpm db:migrate` with `DATABASE_URL` set before the first visit.
 
+## Submission documents
+
+- `docs/one-pager.md` – core idea and data model (also the live doc linked there)
+- `docs/errors-found.md` – the twelve errors the checks found in the packet, with evidence and tax effect
+- `docs/video-script.md` – walkthrough script by role
+
 ## Layout
 
 - `src/lib/packet` – Zod schema, loader, forward/reverse indexes, reference resolution

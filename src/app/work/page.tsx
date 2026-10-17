@@ -8,6 +8,7 @@ import { fmtDate } from "@/lib/format";
 import { canAssign } from "@/lib/permissions";
 import { getReviewContext, needsYou, type NeedsYouItem } from "@/lib/review";
 import { ROLE_LABELS } from "@/lib/roles";
+import { PHASE_LABELS } from "@/lib/season";
 import { getCurrentActor, getNow } from "@/lib/session";
 
 export const metadata: Metadata = { title: "My work" };
@@ -52,9 +53,11 @@ export default async function WorkPage() {
   const byScope = new Map<string, typeof ctx.assignments>();
   for (const a of ctx.assignments) byScope.set(a.scope, [...(byScope.get(a.scope) ?? []), a]);
 
+  const isClient = actor.kind === "client";
+  // Clients see the agency due dates only; internal hand-offs and assignment dates stay inside the firm.
   const deadlines = [
-    ...ctx.packet.firm.deadlines.map((d) => ({ what: d.what, date: d.date, who: null as string | null })),
-    ...ctx.assignments.filter((a) => a.due).map((a) => ({ what: a.role + " · " + (ctx.scopes.find((s) => s.id === a.scope)?.label ?? a.scope), date: a.due!, who: staff.find((s) => s.id === a.assigneeId)?.name ?? a.assigneeId })),
+    ...ctx.packet.firm.deadlines.filter((d) => !isClient || /due date/i.test(d.what)).map((d) => ({ what: d.what, date: d.date, who: null as string | null })),
+    ...(isClient ? [] : ctx.assignments.filter((a) => a.due)).map((a) => ({ what: a.role + " · " + (ctx.scopes.find((s) => s.id === a.scope)?.label ?? a.scope), date: a.due!, who: staff.find((s) => s.id === a.assigneeId)?.name ?? a.assigneeId })),
   ].sort((a, b) => a.date.localeCompare(b.date));
   const daysTo = (d: string) => Math.ceil((Date.parse(d) - now.getTime()) / DAY);
   const mine = ctx.assignments.filter((a) => a.assigneeId === actor.id);
@@ -94,7 +97,7 @@ export default async function WorkPage() {
       />
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label="Needs you" value={items.length} tone={items.length ? "warn" : "ok"} hint={actor.name} />
-        <Stat label="Your assignments" value={mine.length} hint={[...new Set(mine.map((a) => a.role))].join(", ") || "none"} />
+        {isClient ? <Stat label="Your return" value={PHASE_LABELS[ctx.filing.phase]} hint={ctx.client.complete ? "approved by both spouses" : ctx.client.request ? "sent to you for approval" : "being prepared"} /> : <Stat label="Your assignments" value={mine.length} hint={[...new Set(mine.map((a) => a.role))].join(", ") || "none"} />}
         <Stat label="Next deadline" value={upcoming[0] ? fmtDate(upcoming[0].date) : "—"} hint={upcoming[0] ? upcoming[0].what : deadlines.length + " passed"} tone={upcoming[0] && daysTo(upcoming[0].date) <= 14 ? "warn" : undefined} />
         <Stat label="Open questions" value={openQuestions} hint="across the engagement" />
       </div>

@@ -47,7 +47,7 @@ export function ActionForm({
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(fields.length === 0);
-  const input = "w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-[13px] outline-none focus:border-accent";
+  const input = "input";
 
   if (disabled) {
     return (

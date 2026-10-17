@@ -116,8 +116,13 @@ export default async function OverviewPage() {
           chart={<Sparkline values={[...series((v) => v.summary.federal.total_tax), ...(hasWorking ? [ws.federal.total_tax] : [])]} className="text-accent" />}
         />
         <Stat
-          label={hasWorking ? "Federal balance due · working" : "Federal balance due"}
-          value={fmtBalance(hasWorking ? ws.federal.balance_due : latest.summary.federal.balance_due)}
+          label={hasWorking ? "Federal balance · working" : "Federal balance"}
+          value={
+            <span className="flex items-baseline gap-1.5">
+              {fmtMoney(Math.abs(hasWorking ? ws.federal.balance_due : latest.summary.federal.balance_due))}
+              <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">{(hasWorking ? ws.federal.balance_due : latest.summary.federal.balance_due) < 0 ? "refund" : "due"}</span>
+            </span>
+          }
           delta={hasWorking ? delta(ws.federal.balance_due, latest.summary.federal.balance_due, latest.version + " engine") : delta(latest.summary.federal.balance_due, prev?.summary.federal.balance_due, prevId ?? "")}
           hint={latest.summary.federal.penalty ? "incl. " + fmtMoney(latest.summary.federal.penalty) + " penalty" : undefined}
           chart={<Sparkline values={[...series((v) => v.summary.federal.balance_due), ...(hasWorking ? [ws.federal.balance_due] : [])]} className="text-accent" />}
@@ -130,7 +135,12 @@ export default async function OverviewPage() {
         />
         <Stat
           label={hasWorking ? "California balance · working" : "California balance"}
-          value={fmtBalance(hasWorking ? ws.california.balance_due : latest.summary.california.balance_due)}
+          value={
+            <span className="flex items-baseline gap-1.5">
+              {fmtMoney(Math.abs(hasWorking ? ws.california.balance_due : latest.summary.california.balance_due))}
+              <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-muted">{(hasWorking ? ws.california.balance_due : latest.summary.california.balance_due) < 0 ? "refund" : "due"}</span>
+            </span>
+          }
           delta={hasWorking ? delta(ws.california.balance_due, latest.summary.california.balance_due, latest.version + " engine") : delta(latest.summary.california.balance_due, prev?.summary.california.balance_due, prevId ?? "")}
           tone={(hasWorking ? ws.california.balance_due : latest.summary.california.balance_due) < 0 ? "ok" : undefined}
           chart={<Sparkline values={[...series((v) => -v.summary.california.balance_due), ...(hasWorking ? [-ws.california.balance_due] : [])]} className="text-ok" />}

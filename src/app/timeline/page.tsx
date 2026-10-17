@@ -90,7 +90,7 @@ export default async function TimelinePage() {
           <ol className="divide-y divide-border">
             {groups.map((g) => (
               <li key={g.month} className="first:[&>div]:rounded-t-[inherit]">
-                <div className="sticky top-[52px] z-10 border-b border-border bg-surface-2/90 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted backdrop-blur">{g.month}</div>
+                <div className="sticky top-[56px] z-10 border-b border-border bg-surface-2/90 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted backdrop-blur">{g.month}</div>
                 <ul className="divide-y divide-border/60">
                   {g.items.map((e) => {
                     const meta = KIND_META[e.kind];
@@ -128,7 +128,7 @@ export default async function TimelinePage() {
           </ol>
         </div>
 
-        <div className="grid content-start gap-4 xl:sticky xl:top-[68px] xl:self-start">
+        <div className="grid content-start gap-4 xl:sticky xl:top-[72px] xl:self-start">
           <Card title={now.replay ? "The file as of " + fmtDate(now.iso) : "The file today"} description={now.replay ? fmtDateTime(now.iso) : fmtDateTime(realNow)}>
             <div className="grid grid-cols-2 gap-2">
               <Stat label="Documents in" value={state.documentsReceived} hint={"of " + state.documentsTotal} />

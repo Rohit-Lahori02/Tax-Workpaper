@@ -1,11 +1,11 @@
 "use client";
 
 import {
+  Activity,
   Bell,
   BookOpen,
   Building2,
   CalendarClock,
-  Activity,
   CalendarRange,
   ClipboardCheck,
   Clock,
@@ -17,13 +17,13 @@ import {
   GitCompare,
   History,
   Inbox,
-  Mail,
-  Printer,
   LayoutDashboard,
   ListChecks,
+  Mail,
   Map,
   MessageCircleQuestion,
   PenLine,
+  Printer,
   Search,
   Send,
   Settings2,
@@ -109,6 +109,13 @@ export function isActive(pathname: string, href: string, exact?: boolean) {
   return exact ? pathname === href : pathname === href || pathname.startsWith(href + "/");
 }
 
+const BADGE_CLASS: Record<NonNullable<Item["badge"]>, string> = {
+  checks: "bg-danger-soft text-danger",
+  unseen: "bg-accent-soft text-accent",
+  work: "bg-warn-soft text-warn",
+  questions: "bg-accent text-accent-fg",
+};
+
 export function Sidebar({
   firm,
   client,
@@ -129,44 +136,33 @@ export function Sidebar({
   const pathname = usePathname();
   const badge = (b: Item["badge"]) => (b === "questions" ? openQuestions : b === "checks" ? checkErrors : b === "unseen" ? unseen : b === "work" ? work : 0);
   return (
-    <aside className="sticky top-0 hidden h-screen w-[236px] shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
-      <div className="flex items-center gap-2.5 px-4 pb-3 pt-4">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-[12px] font-bold text-accent-fg">{firm.slice(0, 1)}</span>
-        <div className="leading-tight">
-          <div className="text-[13px] font-semibold">{firm}</div>
-          <div className="text-[11px] text-muted">Workpaper</div>
+    <aside className="sticky top-0 hidden h-screen w-[248px] shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
+      <div className="flex h-14 items-center gap-2.5 border-b border-border px-4">
+        <span className="brand-mark flex h-7 w-7 items-center justify-center rounded-lg text-[12px] font-bold text-white">{firm.slice(0, 1)}</span>
+        <div className="min-w-0 leading-tight">
+          <div className="truncate text-[13px] font-semibold tracking-[-0.01em]">{firm}</div>
+          <div className="text-[10.5px] uppercase tracking-[0.08em] text-muted">Workpaper</div>
         </div>
-        <span className="ml-auto rounded-md border border-border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted">TY {client.taxYear}</span>
+        <span className="ml-auto rounded-md border border-border bg-surface px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted">TY {client.taxYear}</span>
       </div>
 
-      <nav className="scroll-thin flex flex-1 flex-col gap-3 overflow-auto px-2 pb-2">
+      <nav className="scroll-thin flex flex-1 flex-col gap-4 overflow-auto px-3 py-3">
         {SECTIONS.map((section) => {
           const items = section.items.filter((i) => showLedger || !i.ledger);
           if (!items.length) return null;
           return (
             <div key={section.label ?? "top"}>
-              {section.label ? <div className="px-2.5 pb-1 pt-1 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">{section.label}</div> : null}
+              {section.label ? <div className="mb-1 px-2.5 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted/80">{section.label}</div> : null}
               <div className="flex flex-col gap-px">
                 {items.map((item) => {
                   const active = isActive(pathname, item.href, item.exact);
                   const Icon = item.icon;
                   const n = badge(item.badge);
                   return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={cn(
-                        "flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[13px] font-medium transition-colors",
-                        active ? "bg-accent-soft text-foreground" : "text-muted hover:bg-surface-2 hover:text-foreground",
-                      )}
-                    >
-                      <Icon className={cn("h-4 w-4", active ? "text-accent" : "")} strokeWidth={1.75} />
-                      {item.label}
-                      {n > 0 ? (
-                        <span className={cn("ml-auto rounded-full px-1.5 text-[10px] font-semibold leading-4", item.badge === "checks" ? "bg-danger-soft text-danger" : item.badge === "unseen" ? "bg-accent-soft text-accent" : item.badge === "work" ? "bg-warn-soft text-warn" : "bg-accent text-accent-fg")}>
-                          {n}
-                        </span>
-                      ) : null}
+                    <Link key={item.href} href={item.href} className={cn("nav-item", active && "is-active")}>
+                      <Icon className="h-[15px] w-[15px] shrink-0" strokeWidth={1.75} />
+                      <span className="truncate">{item.label}</span>
+                      {n > 0 ? <span className={cn("ml-auto rounded-full px-1.5 text-[10px] font-semibold leading-4 tabular-nums", BADGE_CLASS[item.badge!])}>{n}</span> : null}
                     </Link>
                   );
                 })}
@@ -174,38 +170,44 @@ export function Sidebar({
             </div>
           );
         })}
+      </nav>
 
-        <div className="mt-auto px-2 pt-2">
-          <div className="mb-2 px-0.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">Engagement</div>
-          <div className="rounded-lg border border-border bg-surface p-3">
-            <div className="truncate text-[13px] font-medium">{client.name}</div>
-            <div className="mt-0.5 font-mono text-[11px] text-muted">{client.clientId}</div>
-            <dl className="mt-3 grid gap-2 text-[12px]">
+      <div className="border-t border-border p-3">
+        <div className="rounded-xl border border-border bg-surface p-3 shadow-[var(--card-inset)]">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-3 text-[11px] font-semibold text-foreground">{client.name.slice(0, 1)}</span>
+            <div className="min-w-0 leading-tight">
+              <div className="truncate text-[12.5px] font-medium">{client.name}</div>
+              <div className="font-mono text-[10.5px] text-muted">{client.clientId}</div>
+            </div>
+          </div>
+          <dl className="mt-3 grid gap-2 border-t border-border pt-3 text-[12px]">
+            <div className="flex items-start gap-2">
+              <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ok" strokeWidth={1.75} />
+              <div className="min-w-0">
+                <dt className="text-[10.5px] uppercase tracking-[0.06em] text-muted">Current return</dt>
+                <dd className="tabular-nums">
+                  {client.version} · {client.computedAt}
+                </dd>
+              </div>
+            </div>
+            {client.nextDeadline ? (
               <div className="flex items-start gap-2">
-                <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ok" />
-                <div>
-                  <dt className="text-muted">Current return</dt>
-                  <dd>
-                    {client.version} · {client.computedAt}
+                <CalendarClock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warn" strokeWidth={1.75} />
+                <div className="min-w-0">
+                  <dt className="text-[10.5px] uppercase tracking-[0.06em] text-muted">Next deadline</dt>
+                  <dd className="leading-snug tabular-nums">
+                    {client.nextDeadline.date}
+                    <div className="truncate text-[11px] text-muted" title={client.nextDeadline.what}>
+                      {client.nextDeadline.what}
+                    </div>
                   </dd>
                 </div>
               </div>
-              {client.nextDeadline ? (
-                <div className="flex items-start gap-2">
-                  <CalendarClock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warn" />
-                  <div>
-                    <dt className="text-muted">Next deadline</dt>
-                    <dd className="leading-snug">
-                      {client.nextDeadline.date}
-                      <div className="text-[11px] text-muted">{client.nextDeadline.what}</div>
-                    </dd>
-                  </div>
-                </div>
-              ) : null}
-            </dl>
-          </div>
+            ) : null}
+          </dl>
         </div>
-      </nav>
+      </div>
     </aside>
   );
 }
@@ -216,14 +218,7 @@ export function MobileNav() {
   return (
     <nav className="flex items-center gap-1 overflow-auto lg:hidden">
       {items.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={cn(
-            "whitespace-nowrap rounded-md px-2 py-1 text-[12px] font-medium",
-            isActive(pathname, item.href, item.exact) ? "bg-accent-soft text-foreground" : "text-muted hover:text-foreground",
-          )}
-        >
+        <Link key={item.href} href={item.href} className={cn("whitespace-nowrap rounded-md px-2 py-1 text-[12px] font-medium", isActive(pathname, item.href, item.exact) ? "bg-accent-soft text-foreground" : "text-muted hover:text-foreground")}>
           {item.label}
         </Link>
       ))}

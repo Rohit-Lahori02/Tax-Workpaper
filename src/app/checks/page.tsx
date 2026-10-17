@@ -1,6 +1,7 @@
+import { CheckCircle2 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FindingRow } from "@/components/checks/finding-row";
+import { FindingRow, SeverityIcon } from "@/components/checks/finding-row";
 import { PageHeader } from "@/components/page-header";
 import { RefLink } from "@/components/ref-link";
 import { Badge, Card, cn, Stat } from "@/components/ui";
@@ -41,10 +42,14 @@ export default async function ChecksPage({ searchParams }: Props) {
     return "/checks" + (qs ? "?" + qs : "");
   };
   const signed = (n: number) => (n === 0 ? "0" : (n > 0 ? "+" : "−") + fmtMoney(Math.abs(n)));
+  const count = (s: Severity | null) => (s ? run.findings.filter((f) => f.severity === s && (!ar || f.area === ar)).length : run.findings.filter((f) => !ar || f.area === ar).length);
+  const cleanVisible = visible.filter((r) => r.findings.length === 0);
+  const withFindings = visible.filter((r) => r.findings.length > 0);
 
   return (
     <>
       <PageHeader
+        eyebrow="Review"
         title="Checks"
         description={
           "Independent recomputations over the packet. They trust neither the engine nor the extractor: every sum is re-added, every cited document re-read, every agency record compared. Run against " +
@@ -57,6 +62,7 @@ export default async function ChecksPage({ searchParams }: Props) {
             <Badge tone="ok" dot>
               {run.counts.clean} clean
             </Badge>
+            <Badge tone="neutral">{run.findings.length} findings</Badge>
           </>
         }
       />
@@ -68,42 +74,39 @@ export default async function ChecksPage({ searchParams }: Props) {
         <Stat
           label="If every error is corrected"
           value={
-            <span className="text-[20px]">
-              {signed(effect.federal)} <span className="text-[12px] font-normal text-muted">federal</span> · {signed(effect.california)}{" "}
-              <span className="text-[12px] font-normal text-muted">CA</span>
+            <span className="grid grid-cols-[auto_auto] items-baseline gap-x-3 gap-y-0.5 text-[19px]">
+              <span className={effect.federal > 0 ? "text-warn" : effect.federal < 0 ? "text-ok" : ""}>{signed(effect.federal)}</span>
+              <span className="text-[11px] font-medium uppercase tracking-[0.05em] text-muted">federal</span>
+              <span className={effect.california > 0 ? "text-warn" : effect.california < 0 ? "text-ok" : ""}>{signed(effect.california)}</span>
+              <span className="text-[11px] font-medium uppercase tracking-[0.05em] text-muted">California</span>
             </span>
           }
-          hint="estimated tax change from the engine's per-dollar rates"
+          hint="estimated tax change at the engine's per-dollar rates"
         />
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-2">
-        <div className="flex gap-1">
+      <div className="card mt-5 flex flex-col gap-3 p-3 lg:flex-row lg:items-start">
+        <div className="seg">
           {([null, "error", "warning", "info"] as (Severity | null)[]).map((s) => (
-            <Link
-              key={s ?? "all"}
-              href={href(s, ar)}
-              className={cn("rounded-full px-2.5 py-1 text-[12px] font-medium", sev === s ? "bg-accent text-accent-fg" : "bg-surface-2 text-muted hover:text-foreground")}
-            >
+            <Link key={s ?? "all"} href={href(s, ar)} className={cn("seg-item", sev === s && "is-active")}>
+              {s ? <SeverityIcon severity={s} className="h-4 w-4 rounded ring-0 [&>svg]:h-3 [&>svg]:w-3" /> : null}
               {s ? s[0].toUpperCase() + s.slice(1) + "s" : "All"}
+              <span className="font-mono text-[10.5px] text-muted">{count(s)}</span>
             </Link>
           ))}
         </div>
-        <span className="mx-1 h-4 w-px bg-border" />
-        <div className="flex flex-wrap gap-1">
-          <Link href={href(sev, null)} className={cn("rounded-full px-2.5 py-1 text-[12px] font-medium", !ar ? "bg-accent text-accent-fg" : "bg-surface-2 text-muted hover:text-foreground")}>
+        <span className="mt-1.5 hidden h-5 w-px bg-border lg:block" />
+        <div className="flex flex-wrap gap-1.5">
+          <Link href={href(sev, null)} className={cn("chip", !ar && "is-active")}>
             Every area
           </Link>
           {areas.map((a) => {
             const n = run.findings.filter((f) => f.area === a && f.severity === "error").length;
+            const total = run.findings.filter((f) => f.area === a).length;
             return (
-              <Link
-                key={a}
-                href={href(sev, a)}
-                className={cn("rounded-full px-2.5 py-1 text-[12px] font-medium", ar === a ? "bg-accent text-accent-fg" : "bg-surface-2 text-muted hover:text-foreground")}
-              >
+              <Link key={a} href={href(sev, a)} className={cn("chip", ar === a && "is-active")}>
                 {AREA_LABELS[a]}
-                {n ? <span className="ml-1 text-danger">{n}</span> : null}
+                {total ? <span className={cn("count", n && "danger")}>{n || total}</span> : null}
               </Link>
             );
           })}
@@ -111,28 +114,23 @@ export default async function ChecksPage({ searchParams }: Props) {
       </div>
 
       <div className="mt-4 grid gap-4">
-        {visible.map((r) => {
+        {withFindings.map((r) => {
           const shown = r.findings.filter((f) => !sev || f.severity === sev);
-          const worst = r.findings.some((f) => f.severity === "error") ? "error" : r.findings.some((f) => f.severity === "warning") ? "warning" : r.findings.length ? "info" : null;
+          const worst: Severity = r.findings.some((f) => f.severity === "error") ? "error" : r.findings.some((f) => f.severity === "warning") ? "warning" : "info";
           return (
             <Card
               key={r.check}
               title={
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-2.5">
+                  <SeverityIcon severity={worst} />
                   {r.title}
-                  {worst ? (
-                    <Badge tone={worst === "error" ? "danger" : worst === "warning" ? "warn" : "neutral"} dot>
-                      {r.findings.length} finding{r.findings.length === 1 ? "" : "s"}
-                    </Badge>
-                  ) : (
-                    <Badge tone="ok" dot>
-                      clean
-                    </Badge>
-                  )}
+                  <Badge tone={worst === "error" ? "danger" : worst === "warning" ? "warn" : "neutral"}>
+                    {r.findings.length} finding{r.findings.length === 1 ? "" : "s"}
+                  </Badge>
                 </span>
               }
               description={r.coverage}
-              aside={<span className="font-mono text-[11px]">{AREA_LABELS[r.area]}</span>}
+              aside={<span className="chip pointer-events-none h-6">{AREA_LABELS[r.area]}</span>}
               flush
             >
               {shown.length ? (
@@ -146,34 +144,45 @@ export default async function ChecksPage({ searchParams }: Props) {
           );
         })}
 
+        {cleanVisible.length ? (
+          <Card title={<span className="flex items-center gap-2.5"><CheckCircle2 className="h-4 w-4 text-ok" /> Clean checks</span>} description="These found nothing. Each still states what it examined, so a clean result proves coverage rather than silence." flush>
+            <ul className="divide-y divide-border">
+              {cleanVisible.map((r) => (
+                <li key={r.check} className="flex items-start gap-3 px-5 py-3">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-ok" strokeWidth={1.75} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[13px] font-medium">{r.title}</span>
+                      <span className="text-[11px] text-muted">{AREA_LABELS[r.area]}</span>
+                    </div>
+                    <p className="mt-0.5 text-[12.5px] leading-5 text-muted">{r.coverage}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        ) : null}
+
         {!ar || ar === "documents" ? (
           <Card
             title={
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2.5">
                 Packet integrity
-                {index.integrity.length ? (
-                  <Badge tone="neutral" dot>
-                    {index.integrity.length} notes
-                  </Badge>
-                ) : (
-                  <Badge tone="ok" dot>
-                    clean
-                  </Badge>
-                )}
+                {index.integrity.length ? <Badge tone="neutral">{index.integrity.length} notes</Badge> : <Badge tone="ok" dot>clean</Badge>}
               </span>
             }
             description="Every reference inside the packet must land on something that exists, and every stated count must agree with the records delivered."
-            aside={<span className="font-mono text-[11px]">{AREA_LABELS.documents}</span>}
+            aside={<span className="chip pointer-events-none h-6">{AREA_LABELS.documents}</span>}
             flush
           >
             {index.integrity.length ? (
               <ul className="divide-y divide-border">
                 {index.integrity.map((i, n) => (
-                  <li key={n} className="flex gap-3 px-4 py-2.5">
-                    <span className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", i.severity === "warning" ? "bg-warn" : "bg-border-strong")} />
+                  <li key={n} className="flex gap-3 px-5 py-3">
+                    <SeverityIcon severity={i.severity === "warning" ? "warning" : "info"} className="mt-0.5" />
                     <div className="min-w-0">
                       <div className="text-[13px]">{i.message}</div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-x-3">
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                         <span className="font-mono text-[11px] text-muted">{i.code}</span>
                         {i.refs.map((r) => (
                           <RefLink key={r} refId={r} />

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/components/ui";
 import { hrefFor } from "@/lib/refs";
 
-/** A link to any packet reference, rendered in monospace so ids stay recognisable. */
+/** A link to any packet reference, rendered as a small code chip so ids stay recognisable. */
 export function RefLink({
   refId,
   href,
@@ -16,14 +16,11 @@ export function RefLink({
   href?: string;
   children?: ReactNode;
   className?: string;
-  /** Sans-serif, for names rather than ids. */
+  /** Sans-serif link, for names rather than ids. */
   plain?: boolean;
 }) {
   return (
-    <Link
-      href={href ?? hrefFor(refId)}
-      className={cn("text-accent hover:underline", plain ? "" : "font-mono text-[12px]", className)}
-    >
+    <Link href={href ?? hrefFor(refId)} className={cn(plain ? "text-accent hover:underline" : "ref", className)} title={refId}>
       {children ?? refId}
     </Link>
   );

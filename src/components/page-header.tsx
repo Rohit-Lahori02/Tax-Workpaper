@@ -18,12 +18,12 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <header className={cn("mb-5 flex flex-wrap items-end justify-between gap-4", className)}>
+    <header className={cn("fade-up mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5", className)}>
       <div className="min-w-0">
         {eyebrow ? <div className="mb-1.5 text-[12px] font-medium text-muted">{eyebrow}</div> : null}
-        <h1 className="text-[22px] font-semibold leading-7 tracking-tight">{title}</h1>
-        {description ? <p className="mt-1 max-w-3xl text-[13px] leading-5 text-muted">{description}</p> : null}
-        {meta ? <div className="mt-2.5 flex flex-wrap items-center gap-2">{meta}</div> : null}
+        <h1 className="text-[24px] font-semibold leading-8 tracking-[-0.02em]">{title}</h1>
+        {description ? <p className="mt-1.5 max-w-3xl text-[13.5px] leading-[22px] text-muted">{description}</p> : null}
+        {meta ? <div className="mt-3 flex flex-wrap items-center gap-2">{meta}</div> : null}
       </div>
       {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
     </header>

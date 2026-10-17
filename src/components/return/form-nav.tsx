@@ -25,7 +25,7 @@ export function FormNav({ forms, active, version }: { forms: FormEntry[]; active
     { label: "California", items: forms.filter((f) => f.jurisdiction === "california") },
   ];
   return (
-    <nav className="card sticky top-[68px] max-h-[calc(100vh-6rem)] overflow-auto scroll-thin p-2">
+    <nav className="card sticky top-[72px] max-h-[calc(100vh-6rem)] overflow-auto scroll-thin p-2">
       {groups.map((g) => (
         <div key={g.label} className="mb-2">
           <div className="px-2 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">{g.label}</div>

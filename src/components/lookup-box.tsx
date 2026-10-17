@@ -14,9 +14,11 @@ export function LookupBox({ className }: { className?: string }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement | null)?.tagName;
-      if (e.key === "/" && tag !== "INPUT" && tag !== "TEXTAREA" && tag !== "SELECT") {
+      const typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+      if ((e.key === "/" && !typing) || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k")) {
         e.preventDefault();
         ref.current?.focus();
+        ref.current?.select();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -37,7 +39,7 @@ export function LookupBox({ className }: { className?: string }) {
         }
       }}
     >
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" strokeWidth={1.75} />
       <input
         ref={ref}
         value={q}
@@ -45,9 +47,10 @@ export function LookupBox({ className }: { className?: string }) {
         suppressHydrationWarning
         placeholder="Search the file, or jump to F1040.11, ev-0703, D30, qa-14"
         aria-label="Search the file or jump to a reference"
-        className="h-8 w-full rounded-full border border-border bg-surface pl-9 pr-9 text-[12.5px] outline-none placeholder:text-muted focus:border-accent"
+        className="h-9 w-full rounded-lg border border-border bg-surface pl-9 pr-16 text-[13px] shadow-[var(--card-inset)] outline-none transition-[border-color,box-shadow] placeholder:text-muted focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-soft)]"
       />
-      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+      <span className="pointer-events-none absolute right-2.5 top-1/2 flex -translate-y-1/2 items-center gap-1">
+        <Kbd>⌘K</Kbd>
         <Kbd>/</Kbd>
       </span>
     </form>

@@ -44,9 +44,9 @@ export function ThemeToggle() {
         document.documentElement.setAttribute("data-theme", next);
         document.cookie = "wp-theme=" + next + "; path=/; max-age=31536000; samesite=lax";
       }}
-      className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface text-muted hover:text-foreground"
+      className="icon-btn"
     >
-      {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      {theme === "dark" ? <Sun className="h-4 w-4" strokeWidth={1.75} /> : <Moon className="h-4 w-4" strokeWidth={1.75} />}
     </button>
   );
 }

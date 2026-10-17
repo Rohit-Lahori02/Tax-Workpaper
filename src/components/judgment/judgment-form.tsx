@@ -16,7 +16,7 @@ export interface RecordedJudgment {
   answers?: boolean[];
 }
 
-const input = "w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-[13px] outline-none focus:border-accent";
+const input = "input";
 const fmtWhen = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "UTC" });
 
 /**
@@ -53,7 +53,7 @@ export function JudgmentForm({
   const [error, setError] = useState<string | null>(null);
 
   const summary = recorded ? (
-    <div className={cn("text-[12.5px]", compact ? "" : "rounded-md bg-surface-2 px-3 py-2")}>
+    <div className={cn("text-[12.5px]", compact ? "" : "rounded-lg border border-border bg-surface-2/60 px-3 py-2.5")}>
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="ok">
           <Gavel className="h-3 w-3" /> {JUDGMENT_LABELS[type]}
@@ -90,7 +90,7 @@ export function JudgmentForm({
 
   return (
     <form
-      className="grid gap-2 rounded-md border border-border bg-surface p-3"
+      className="grid gap-2 rounded-lg border border-border bg-surface-2/40 p-3"
       onSubmit={(e) => {
         e.preventDefault();
         const form = e.currentTarget;
@@ -140,10 +140,10 @@ export function JudgmentForm({
       <textarea name="text" rows={3} required placeholder={placeholder ?? "What was decided and why"} className={input} />
       <input name="authority" placeholder={requireAuthority ? "Authority relied on (required): code section, regulation, publication" : "Authority relied on (optional)"} required={requireAuthority} className={input} />
       <div className="flex items-center gap-2">
-        <button type="submit" disabled={pending} className="rounded-full bg-accent px-3 py-1.5 text-[12.5px] font-medium text-accent-fg disabled:opacity-50">
+        <button type="submit" disabled={pending} className="pill primary h-8">
           Record
         </button>
-        <button type="button" onClick={() => setOpen(false)} className="rounded-full border border-border px-3 py-1.5 text-[12.5px] text-muted hover:text-foreground">
+        <button type="button" onClick={() => setOpen(false)} className="pill h-8">
           Cancel
         </button>
         {error ? <span className="text-[12px] text-danger">{error}</span> : null}

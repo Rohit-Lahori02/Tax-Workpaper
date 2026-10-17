@@ -22,7 +22,7 @@ export function StepToggle({ target, done, locked, allowed }: { target: string; 
             setError(r.ok ? null : r.error);
           });
         }}
-        className={cn("rounded-full border px-2.5 py-1 text-[12px] font-medium", done ? "border-border text-muted hover:text-foreground" : "border-accent bg-accent-soft text-foreground", pending && "opacity-50")}
+        className={cn("pill h-7 px-2.5 text-[12px]", !done && "primary", pending && "opacity-50")}
       >
         {done ? "Reopen" : "Mark complete"}
       </button>

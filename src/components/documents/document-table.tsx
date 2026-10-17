@@ -1,12 +1,13 @@
 "use client";
 
-import { BookOpen, FileSignature, FileText, IdCard, Landmark, Mail, Receipt, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Badge, cn, type Tone } from "@/components/ui";
 import { fmtDate } from "@/lib/format";
 import type { DocumentRow, DocumentState } from "@/lib/packet/documents";
 import { documentHref } from "@/lib/refs";
+import { typeIcon } from "./type-icon";
 
 const STATE_LABEL: Record<DocumentState, { label: string; tone: Tone }> = {
   reached: { label: "On the return", tone: "ok" },
@@ -17,15 +18,6 @@ const STATE_LABEL: Record<DocumentState, { label: string; tone: Tone }> = {
 
 type Filter = "all" | DocumentState | "attention";
 
-export function typeIcon(type: string) {
-  if (/identity|license|passport|social/i.test(type)) return IdCard;
-  if (/engagement|consent|8879|signature/i.test(type)) return FileSignature;
-  if (/books|ledger|profit|transaction|report/i.test(type)) return BookOpen;
-  if (/bank|statement|brokerage|composite|closing|payoff/i.test(type)) return Landmark;
-  if (/receipt|invoice|confirmation|donation/i.test(type)) return Receipt;
-  if (/notice|letter|transcript/i.test(type)) return Mail;
-  return FileText;
-}
 
 function ExtractionDot({ status }: { status: DocumentRow["extraction"] }) {
   const tone = status === "extracted" ? "bg-ok" : status === "partial" ? "bg-warn" : "bg-danger";

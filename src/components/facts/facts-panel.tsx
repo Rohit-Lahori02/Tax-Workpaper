@@ -61,9 +61,9 @@ function initials(name: string) {
     .join("");
 }
 
-const input = "w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-[13px] outline-none focus:border-accent";
-const button = "rounded-full bg-accent px-3 py-1.5 text-[12.5px] font-medium text-accent-fg disabled:opacity-50";
-const ghost = "rounded-full border border-border px-2.5 py-1 text-[12px] text-muted hover:bg-surface-2 hover:text-foreground disabled:opacity-50";
+const input = "input";
+const button = "pill primary";
+const ghost = "pill h-7 px-2.5 text-[12px] text-muted";
 
 /**
  * The evidence and review trail for one target, with the forms to add to it.
@@ -97,12 +97,12 @@ export function FactsPanel({
 
   return (
     <section className={cn("card", compact ? "" : "")}>
-      <header className="flex items-center justify-between px-4 pb-2 pt-3.5">
-        <h2 className="text-[13.5px] font-semibold">{title}</h2>
-        <span className="font-mono text-[11px] text-muted">{target}</span>
+      <header className="flex items-center justify-between px-5 pb-2 pt-4">
+        <h2 className="text-[14px] font-semibold tracking-[-0.01em]">{title}</h2>
+        <span className="ref pointer-events-none">{target}</span>
       </header>
 
-      <div className="px-4 pb-3">
+      <div className="px-5 pb-3">
         {facts.length === 0 ? (
           <Empty>Nothing recorded yet. Whatever you add here becomes part of the permanent record.</Empty>
         ) : (
@@ -115,17 +115,14 @@ export function FactsPanel({
       </div>
 
       {tabs.length ? (
-        <div className="border-t border-border px-4 py-3">
-          <div className="mb-2.5 flex gap-1">
+        <div className="border-t border-border bg-surface-2/30 px-5 py-4">
+          <div className="seg mb-3">
             {tabs.map((t) => (
               <button
                 key={t.key}
                 type="button"
                 onClick={() => setTab(t.key)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-medium",
-                  tab === t.key ? "bg-accent-soft text-foreground" : "text-muted hover:text-foreground",
-                )}
+                className={cn("seg-item", tab === t.key && "is-active")}
               >
                 {t.icon}
                 {t.label}
@@ -377,7 +374,7 @@ function VerifyForm({ target, types }: { target: string; types: string[] }) {
         {types.map((t, i) => (
           <label key={t} className="cursor-pointer">
             <input type="radio" name="type" value={t} defaultChecked={i === 0} className="peer sr-only" />
-            <span className="inline-block rounded-full border border-border px-2.5 py-1 text-[12px] text-muted peer-checked:border-accent peer-checked:bg-accent-soft peer-checked:text-foreground">
+            <span className="chip peer-checked:border-accent/50 peer-checked:bg-accent-soft peer-checked:text-foreground">
               {humanize(t)}
             </span>
           </label>
@@ -446,7 +443,7 @@ function AttachForm({ target }: { target: string }) {
   return (
     <form onSubmit={onSubmit} className="grid gap-2">
       <input type="hidden" name="target" value={target} />
-      <input type="file" name="file" required className="text-[12.5px] file:mr-3 file:rounded-full file:border file:border-border file:bg-surface file:px-3 file:py-1 file:text-[12px] file:text-foreground" />
+      <input type="file" name="file" required className="text-[12.5px] file:mr-3 file:rounded-lg file:border file:border-border file:bg-surface file:px-3 file:py-1 file:text-[12px] file:text-foreground" />
       <input name="note" placeholder="Optional: what this file shows" className={input} />
       <div className="flex items-center gap-2">
         <button type="submit" disabled={pending} className={button}>

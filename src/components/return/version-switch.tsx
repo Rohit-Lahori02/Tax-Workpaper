@@ -21,17 +21,12 @@ export function VersionSwitch({
 }) {
   const options: VersionOption[] = versions.map((v) => (typeof v === "string" ? { id: v } : v));
   return (
-    <div className="inline-flex rounded-full border border-border bg-surface p-0.5 text-[12px]">
+    <div className="seg" role="tablist" aria-label="Return version">
       {options.map((v) => (
-        <Link
-          key={v.id}
-          href={href(v.id)}
-          className={cn("rounded-full px-2.5 py-1 font-medium", v.id === current ? "bg-accent text-accent-fg" : "text-muted hover:text-foreground")}
-          aria-current={v.id === current ? "page" : undefined}
-          title={v.hint}
-        >
+        <Link key={v.id} href={href(v.id)} className={cn("seg-item", v.id === current && "is-active")} aria-current={v.id === current ? "page" : undefined} title={v.hint}>
+          {v.id === "working" ? <span className="h-1.5 w-1.5 rounded-full bg-accent" /> : null}
           {v.label ?? v.id}
-          {v.id === latest ? <span className="ml-1 opacity-70">current</span> : null}
+          {v.id === latest ? <span className="rounded-full bg-ok-soft px-1.5 text-[10px] font-semibold leading-4 text-ok">current</span> : null}
         </Link>
       ))}
     </div>

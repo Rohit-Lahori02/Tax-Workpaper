@@ -55,7 +55,7 @@ export function RowCheckbox({ lineKey }: { lineKey: string }) {
       checked={selected.has(lineKey)}
       onChange={() => toggle(lineKey)}
       suppressHydrationWarning
-      className="h-3.5 w-3.5 accent-[var(--accent)]"
+      className="h-3.5 w-3.5 rounded accent-[var(--accent)]"
     />
   );
 }
@@ -115,20 +115,20 @@ export function BulkBar({ verificationTypes, canVerify }: { verificationTypes: s
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-5 z-30 flex justify-center px-4">
-      <div className={cn("pointer-events-auto flex flex-wrap items-center gap-3 rounded-full border border-border bg-surface px-4 py-2 text-[12.5px] shadow-lg", pending && "opacity-70")}>
+      <div className={cn("pointer-events-auto flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface px-4 py-2.5 text-[12.5px] shadow-[var(--shadow-pop)]", pending && "opacity-70")}>
         {n > 0 ? (
           <>
-            <span className="font-medium">{n} selected</span>
+            <span className="rounded-md bg-accent-soft px-2 py-0.5 font-medium tabular-nums text-accent">{n} selected</span>
             {canVerify ? (
               <>
-                <select value={type} onChange={(e) => setType(e.target.value)} className="h-7 rounded-full border border-border bg-surface px-2 text-[12px]" aria-label="Verification type">
+                <select value={type} onChange={(e) => setType(e.target.value)} className="h-8 rounded-lg border border-border bg-surface px-2 text-[12px]" aria-label="Verification type">
                   {verificationTypes.map((t) => (
                     <option key={t} value={t}>
                       {t.replace(/_/g, " ")}
                     </option>
                   ))}
                 </select>
-                <button type="button" onClick={verify} disabled={pending} className="inline-flex items-center gap-1 rounded-full bg-accent px-3 py-1 font-medium text-accent-fg disabled:opacity-50">
+                <button type="button" onClick={verify} disabled={pending} className="pill primary h-8">
                   <CheckCircle2 className="h-3.5 w-3.5" /> Verify all
                 </button>
               </>
@@ -142,7 +142,7 @@ export function BulkBar({ verificationTypes, canVerify }: { verificationTypes: s
           <span className={cn("inline-flex items-center gap-2", toast.error ? "text-danger" : "text-muted")}>
             {toast.text}
             {toast.batchId ? (
-              <button type="button" onClick={() => undo(toast.batchId!)} disabled={pending} className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-foreground hover:bg-surface-2">
+              <button type="button" onClick={() => undo(toast.batchId!)} disabled={pending} className="pill h-7 px-2.5 text-[12px]">
                 <Undo2 className="h-3 w-3" /> Undo
               </button>
             ) : null}

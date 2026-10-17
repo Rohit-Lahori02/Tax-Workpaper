@@ -13,7 +13,7 @@ export interface AdjustmentPrefill {
   fromFinding?: string;
 }
 
-const input = "w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-[13px] outline-none focus:border-accent";
+const input = "input";
 
 /**
  * Propose a corrected value for a line. The engine's figure is never
@@ -53,7 +53,7 @@ export function AdjustmentForm({
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className="pill w-full justify-center">
+      <button type="button" onClick={() => setOpen(true)} className="pill primary w-full justify-center">
         <PencilLine className="h-3.5 w-3.5" /> Adjust this line
       </button>
     );
@@ -61,7 +61,7 @@ export function AdjustmentForm({
 
   return (
     <form
-      className="card grid gap-3 p-4"
+      className="card grid gap-3 p-5"
       onSubmit={(e) => {
         e.preventDefault();
         const form = e.currentTarget;
@@ -79,7 +79,7 @@ export function AdjustmentForm({
       }}
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-[13.5px] font-semibold">Adjust {target}</h2>
+        <h2 className="text-[14px] font-semibold tracking-[-0.01em]">Adjust {target}</h2>
         <span className="font-mono text-[11px] text-muted">engine {fmtMoney(engineValue)}{workingValue !== engineValue ? " · working " + fmtMoney(workingValue) : ""}</span>
       </div>
       <input type="hidden" name="target" value={target} />
@@ -108,7 +108,7 @@ export function AdjustmentForm({
           </select>
         </label>
       </div>
-      <div className="flex flex-wrap items-center gap-2 rounded-md bg-surface-2 px-3 py-2 text-[12.5px]">
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2/60 px-3 py-2 text-[12.5px]">
         <span className="text-muted">Change</span>
         <span className="font-mono tabular-nums">{valid ? money(delta) : "—"}</span>
         <span className="text-muted">· estimated effect on balance due</span>
@@ -118,10 +118,10 @@ export function AdjustmentForm({
         {needsPartner && valid ? <Badge tone="warn">over {fmtMoney(partnerThreshold)}: partner sign-off required</Badge> : null}
       </div>
       <div className="flex items-center gap-2">
-        <button type="submit" disabled={pending || !valid} className="rounded-full bg-accent px-3 py-1.5 text-[12.5px] font-medium text-accent-fg disabled:opacity-50">
+        <button type="submit" disabled={pending || !valid} className="pill primary">
           Record adjustment
         </button>
-        <button type="button" onClick={() => setOpen(false)} className="rounded-full border border-border px-3 py-1.5 text-[12.5px] text-muted hover:text-foreground">
+        <button type="button" onClick={() => setOpen(false)} className="pill">
           Cancel
         </button>
         {error ? <span className="text-[12px] text-danger">{error}</span> : null}

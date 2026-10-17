@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { FindingRow } from "@/components/checks/finding-row";
 import { PageHeader } from "@/components/page-header";
 import { RefLink } from "@/components/ref-link";
-import { Badge, Card, cn, Stat } from "@/components/ui";
+import { Card, cn, Stat } from "@/components/ui";
 import { runChecks } from "@/lib/checks/run";
 import { getLedger } from "@/lib/facts/repo";
 import { fmtMoney, fmtNumber } from "@/lib/format";

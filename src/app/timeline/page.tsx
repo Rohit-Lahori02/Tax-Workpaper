@@ -140,14 +140,14 @@ export default async function TimelinePage() {
                         <div className="min-w-0">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                              <span className="text-[13px] font-medium leading-5">{e.title}</span>
+                              <span className="break-words text-[13px] font-medium leading-5">{e.title}</span>
                               <Badge tone={meta.tone}>{meta.label}</Badge>
                               {e.scheduled ? <Badge tone="neutral">scheduled</Badge> : null}
                               {ahead ? <Badge tone="neutral">not yet</Badge> : null}
                             </div>
                             <SetNowButton iso={e.at} active={active} quiet className="shrink-0" />
                           </div>
-                          {e.detail ? <p className="mt-0.5 text-[12.5px] leading-5 text-muted">{e.detail}</p> : null}
+                          {e.detail ? <p className="mt-0.5 break-words text-[12.5px] leading-5 text-muted">{e.detail}</p> : null}
                           {e.actor || e.refs.length ? (
                             <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11.5px] text-muted">
                               {e.actor ? <span className="mr-1">by {e.actor}</span> : null}

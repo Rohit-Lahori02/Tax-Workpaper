@@ -237,6 +237,8 @@ textarea {
   /* Segmented control: one group, one selection. */
   .seg {
     display: inline-flex;
+    flex-wrap: wrap;
+    max-width: 100%;
     align-items: center;
     gap: 2px;
     padding: 3px;

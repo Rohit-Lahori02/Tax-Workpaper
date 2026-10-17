@@ -25,7 +25,7 @@ export function PageHeader({
         {description ? <div className="mt-1.5 max-w-3xl text-[13.5px] leading-[22px] text-muted">{description}</div> : null}
         {meta ? <div className="mt-3 flex flex-wrap items-center gap-2">{meta}</div> : null}
       </div>
-      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">{actions}</div> : null}
     </header>
   );
 }

@@ -35,7 +35,7 @@ export function Card({
           {aside ? <div className="shrink-0 pt-0.5 text-[12px] text-muted">{aside}</div> : null}
         </header>
       ) : null}
-      <div className={cn(flush ? (title ? "border-t border-border" : "") : title ? "px-5 pb-5 pt-1" : "p-5", bodyClassName)}>{children}</div>
+      <div className={cn(flush ? cn("overflow-x-auto", title && "border-t border-border") : title ? "px-5 pb-5 pt-1" : "p-5", bodyClassName)}>{children}</div>
     </section>
   );
 }
@@ -69,7 +69,7 @@ export function Badge({
     <span
       title={title}
       className={cn(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-px text-[11px] font-medium leading-[18px] ring-1 ring-inset",
+        "inline-flex max-w-full items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-px text-[11px] font-medium leading-[18px] ring-1 ring-inset max-sm:whitespace-normal",
         toneClass[tone],
         mono && "font-mono",
         className,

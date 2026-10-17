@@ -90,9 +90,9 @@ export function ActivityTable({ rows }: { rows: FactView[] }) {
             </option>
           ))}
         </select>
-        <div className="relative ml-auto">
+        <div className="relative w-full sm:ml-auto sm:w-auto">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter by target, person or text" aria-label="Filter activity" suppressHydrationWarning className="input h-8 w-72 py-0 pl-8 text-[12px]" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter by target, person or text" aria-label="Filter activity" suppressHydrationWarning className="input h-8 w-full py-0 pl-8 text-[12px] sm:w-72" />
         </div>
         <span className="text-[12px] text-muted">
           <span className="font-medium tabular-nums text-foreground">{shown.length}</span> of {rows.length}

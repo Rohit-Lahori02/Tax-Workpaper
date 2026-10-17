@@ -87,7 +87,7 @@ export default async function ComparePage({ searchParams }: Props) {
       />
 
       <div className="card mb-4 grid gap-0 divide-y divide-border sm:grid-cols-[1fr_auto_1fr] sm:divide-x sm:divide-y-0">
-        <div className="px-5 py-3">
+        <div className="min-w-0 px-5 py-3">
           <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">From</div>
           <div className="mt-0.5 text-[15px] font-semibold">{name(a)}</div>
           <div className="truncate text-[12px] text-muted">{describe(a)}</div>
@@ -95,7 +95,7 @@ export default async function ComparePage({ searchParams }: Props) {
         <div className="flex items-center justify-center px-4 text-muted">
           <ArrowRight className="h-4 w-4" />
         </div>
-        <div className="px-5 py-3">
+        <div className="min-w-0 px-5 py-3">
           <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-accent">To</div>
           <div className="mt-0.5 text-[15px] font-semibold">{name(b)}</div>
           <div className="truncate text-[12px] text-muted">{describe(b)}</div>

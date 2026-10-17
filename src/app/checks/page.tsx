@@ -7,22 +7,28 @@ import { RefLink } from "@/components/ref-link";
 import { Badge, Card, cn, Stat } from "@/components/ui";
 import { runChecks } from "@/lib/checks/run";
 import { AREA_LABELS, type Area, type Severity } from "@/lib/checks/types";
+import { resolvedFindingIds } from "@/lib/completeness";
 import { getLedger } from "@/lib/facts/repo";
 import { fmtMoney } from "@/lib/format";
 import { getEffectivePacket } from "@/lib/standards-server";
 
 export const metadata: Metadata = { title: "Checks" };
 
-type Props = { searchParams: Promise<{ severity?: string; area?: string }> };
+type Props = { searchParams: Promise<{ severity?: string; area?: string; open?: string }> };
 
 export default async function ChecksPage({ searchParams }: Props) {
-  const { severity, area } = await searchParams;
+  const { severity, area, open } = await searchParams;
   const { packet, index } = await getEffectivePacket();
   const { ledger } = await getLedger();
   const run = runChecks(packet, index);
 
   const sev = (["error", "warning", "info"] as Severity[]).includes(severity as Severity) ? (severity as Severity) : null;
   const ar = area && area in AREA_LABELS ? (area as Area) : null;
+  const onlyOpen = open === "1";
+  const resolved = resolvedFindingIds(ledger);
+  const isOpen = (f: { id: string }) => !resolved.has(f.id);
+  const openErrors = run.findings.filter((f) => f.severity === "error" && isOpen(f)).length;
+  const addressed = run.findings.filter((f) => !isOpen(f)).length;
 
   const errors = run.findings.filter((f) => f.severity === "error");
   const effect = errors.reduce(
@@ -32,12 +38,13 @@ export default async function ChecksPage({ searchParams }: Props) {
   const areas = (Object.keys(AREA_LABELS) as Area[]).filter((a) => run.results.some((r) => r.area === a));
   const rank = (r: (typeof run.results)[number]) => (r.findings.some((f) => f.severity === "error") ? 0 : r.findings.some((f) => f.severity === "warning") ? 1 : r.findings.length ? 2 : 3);
   const visible = run.results
-    .filter((r) => (!ar || r.area === ar) && (!sev || r.findings.some((f) => f.severity === sev)))
+    .filter((r) => (!ar || r.area === ar) && (!sev || r.findings.some((f) => f.severity === sev)) && (!onlyOpen || r.findings.length === 0 || r.findings.some(isOpen)))
     .sort((a, b) => rank(a) - rank(b) || areas.indexOf(a.area) - areas.indexOf(b.area));
-  const href = (s: Severity | null, a: Area | null) => {
+  const href = (s: Severity | null, a: Area | null, o: boolean = onlyOpen) => {
     const q = new URLSearchParams();
     if (s) q.set("severity", s);
     if (a) q.set("area", a);
+    if (o) q.set("open", "1");
     const qs = q.toString();
     return "/checks" + (qs ? "?" + qs : "");
   };
@@ -63,12 +70,17 @@ export default async function ChecksPage({ searchParams }: Props) {
               {run.counts.clean} clean
             </Badge>
             <Badge tone="neutral">{run.findings.length} findings</Badge>
+            {addressed ? (
+              <Badge tone="ok" dot>
+                {addressed} addressed
+              </Badge>
+            ) : null}
           </>
         }
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat label="Errors" value={run.counts.error} tone={run.counts.error ? "danger" : "ok"} hint="numbers the evidence contradicts" />
+        <Stat label="Errors" value={run.counts.error} tone={openErrors ? "danger" : "ok"} hint={run.counts.error ? (openErrors === run.counts.error ? "numbers the evidence contradicts" : openErrors + " still open · " + (run.counts.error - openErrors) + " addressed") : "numbers the evidence contradicts"} />
         <Stat label="Warnings" value={run.counts.warning} tone={run.counts.warning ? "warn" : undefined} hint="needs a person's judgment" />
         <Stat label="Information" value={run.counts.info} hint="worth knowing, no change implied" />
         <Stat
@@ -96,6 +108,11 @@ export default async function ChecksPage({ searchParams }: Props) {
           ))}
         </div>
         <span className="mt-1.5 hidden h-5 w-px bg-border lg:block" />
+        <Link href={href(sev, ar, !onlyOpen)} className={cn("chip", onlyOpen && "is-active")} title="Hide findings that already have an adjustment or a judgment">
+          Open only
+          {addressed ? <span className="count">{run.findings.length - addressed}</span> : null}
+        </Link>
+        <span className="mt-1.5 hidden h-5 w-px bg-border lg:block" />
         <div className="flex flex-wrap gap-1.5">
           <Link href={href(sev, null)} className={cn("chip", !ar && "is-active")}>
             Every area
@@ -115,7 +132,7 @@ export default async function ChecksPage({ searchParams }: Props) {
 
       <div className="mt-4 grid gap-4">
         {withFindings.map((r) => {
-          const shown = r.findings.filter((f) => !sev || f.severity === sev);
+          const shown = r.findings.filter((f) => (!sev || f.severity === sev) && (!onlyOpen || isOpen(f)));
           const worst: Severity = r.findings.some((f) => f.severity === "error") ? "error" : r.findings.some((f) => f.severity === "warning") ? "warning" : "info";
           return (
             <Card
@@ -136,7 +153,7 @@ export default async function ChecksPage({ searchParams }: Props) {
               {shown.length ? (
                 <ul className="divide-y divide-border">
                   {shown.map((f) => (
-                    <FindingRow key={f.id} f={f} summary={ledger.summary("check:" + f.id)} />
+                    <FindingRow key={f.id} f={f} summary={ledger.summary("check:" + f.id)} resolved={resolved.has(f.id)} />
                   ))}
                 </ul>
               ) : null}

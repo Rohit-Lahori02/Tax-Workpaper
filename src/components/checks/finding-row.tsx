@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, ArrowUpRight, Info, OctagonAlert } from "lucide-react";
+import { AlertTriangle, ArrowRight, ArrowUpRight, CheckCircle2, Info, OctagonAlert } from "lucide-react";
 import Link from "next/link";
 import { Marks } from "@/components/facts/fact-marks";
 import { RefLink } from "@/components/ref-link";
@@ -40,7 +40,7 @@ export function EffectBadge({ effect }: { effect: Finding["effect"] }) {
   );
 }
 
-export function FindingRow({ f, summary, expanded }: { f: Finding; summary?: TargetSummary; expanded?: boolean }) {
+export function FindingRow({ f, summary, expanded, resolved }: { f: Finding; summary?: TargetSummary; expanded?: boolean; resolved?: boolean }) {
   const href = hrefFor("check:" + f.id);
   const hasCompare = f.expected !== undefined || f.actual !== undefined;
   return (
@@ -53,6 +53,11 @@ export function FindingRow({ f, summary, expanded }: { f: Finding; summary?: Tar
               {f.title}
             </Link>
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              {resolved ? (
+                <Badge tone="ok" title="An adjustment was made from this finding or a judgment recorded on it">
+                  <CheckCircle2 className="h-3 w-3" /> addressed
+                </Badge>
+              ) : null}
               <EffectBadge effect={f.effect} />
               {typeof f.difference === "number" && f.difference !== 0 ? (
                 <Badge tone="neutral" mono title="Difference between the return and the evidence">

@@ -1,20 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Search } from "lucide-react";
+import { Fragment, useMemo, useState } from "react";
 import { RefLink } from "@/components/ref-link";
 import { Badge, cn, type Tone } from "@/components/ui";
+import { factSummary, targetLabel } from "@/lib/facts/summary";
 import { KIND_LABELS, type FactKind, type FactView } from "@/lib/facts/types";
 import { ROLE_LABELS } from "@/lib/roles";
 
-const fmtWhen = new Intl.DateTimeFormat("en-US", {
-  year: "numeric",
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-  timeZone: "UTC",
-  timeZoneName: "short",
-});
+const fmtDay = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+const fmtTime = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: "UTC" });
 
 const TONE: Record<string, Tone> = {
   verification: "ok",
@@ -25,30 +20,27 @@ const TONE: Record<string, Tone> = {
   retract: "warn",
   resolve: "ok",
   sensitive_view: "warn",
+  adjustment: "accent",
+  judgment: "ok",
+  disposition: "neutral",
+  step: "neutral",
+  signoff: "ok",
+  assignment: "neutral",
+  approval_request: "accent",
+  approval: "ok",
+  filing: "danger",
+  correction: "warn",
+  standard: "accent",
+  time: "neutral",
+  seen: "neutral",
 };
 
-function summaryOf(f: FactView): string {
-  const b = f.body;
-  switch (f.kind) {
-    case "verification":
-      return String(b.type ?? "").replace(/_/g, " ") + (b.note ? " · " + String(b.note) : "");
-    case "note":
-      return (b.blocking ? "[blocks filing] " : "") + String(b.text ?? "");
-    case "question":
-      return "to " + (b.to === "client" ? "the client" : String(b.to)) + ": " + String(b.text ?? "");
-    case "answer":
-      return (b.onBehalf ? "(recorded for the client) " : "") + String(b.text ?? "");
-    case "attachment":
-      return String(b.name ?? "file");
-    case "retract":
-      return "retracted an earlier record" + (b.reason ? ": " + String(b.reason) : "");
-    case "resolve":
-      return "resolved a note" + (b.text ? ": " + String(b.text) : "");
-    case "sensitive_view":
-      return "viewed unmasked: " + (Array.isArray(b.fields) ? (b.fields as string[]).join(", ") : "");
-    default:
-      return JSON.stringify(b);
-  }
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
 export function ActivityTable({ rows }: { rows: FactView[] }) {
@@ -66,16 +58,23 @@ export function ActivityTable({ rows }: { rows: FactView[] }) {
   const shown = rows.filter((r) => {
     if (kind !== "all" && r.kind !== kind) return false;
     if (actor !== "all" && r.actorId !== actor) return false;
-    if (q && !(r.target + " " + summaryOf(r)).toLowerCase().includes(q.toLowerCase())) return false;
+    if (q && !(r.target + " " + factSummary(r) + " " + r.actorName).toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
 
-  const control = "h-8 rounded-full border border-border bg-surface px-3 text-[12px] outline-none focus:border-accent";
+  // Day separators keep a long feed readable.
+  const withDays: { day: string; items: FactView[] }[] = [];
+  for (const f of shown) {
+    const day = fmtDay.format(new Date(f.at));
+    const g = withDays.at(-1);
+    if (g && g.day === day) g.items.push(f);
+    else withDays.push({ day, items: [f] });
+  }
 
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
-        <select value={kind} onChange={(e) => setKind(e.target.value)} className={control} aria-label="Kind" suppressHydrationWarning>
+        <select value={kind} onChange={(e) => setKind(e.target.value)} className="input h-8 w-auto py-0 text-[12px]" aria-label="Kind" suppressHydrationWarning>
           <option value="all">All kinds</option>
           {kinds.map((k) => (
             <option key={k} value={k}>
@@ -83,7 +82,7 @@ export function ActivityTable({ rows }: { rows: FactView[] }) {
             </option>
           ))}
         </select>
-        <select value={actor} onChange={(e) => setActor(e.target.value)} className={control} aria-label="Person" suppressHydrationWarning>
+        <select value={actor} onChange={(e) => setActor(e.target.value)} className="input h-8 w-auto py-0 text-[12px]" aria-label="Person" suppressHydrationWarning>
           <option value="all">Everyone</option>
           {actors.map(([id, name]) => (
             <option key={id} value={id}>
@@ -91,20 +90,19 @@ export function ActivityTable({ rows }: { rows: FactView[] }) {
             </option>
           ))}
         </select>
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Filter by target or text"
-          aria-label="Filter activity"
-          suppressHydrationWarning
-          className={cn(control, "ml-auto w-64")}
-        />
+        <div className="relative ml-auto">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter by target, person or text" aria-label="Filter activity" suppressHydrationWarning className="input h-8 w-72 py-0 pl-8 text-[12px]" />
+        </div>
+        <span className="text-[12px] text-muted">
+          <span className="font-medium tabular-nums text-foreground">{shown.length}</span> of {rows.length}
+        </span>
       </div>
       <div className="overflow-auto">
         <table className="tbl">
           <thead>
             <tr>
-              <th>When</th>
+              <th className="w-20">When</th>
               <th>Who</th>
               <th>What</th>
               <th>On</th>
@@ -112,32 +110,49 @@ export function ActivityTable({ rows }: { rows: FactView[] }) {
             </tr>
           </thead>
           <tbody>
-            {shown.map((f) => (
-              <tr key={f.id} className={cn(f.retracted && "opacity-60")}>
-                <td className="whitespace-nowrap text-muted">{fmtWhen.format(new Date(f.at))}</td>
-                <td className="whitespace-nowrap">
-                  <div className="font-medium">{f.actorName}</div>
-                  <div className="text-[11px] text-muted">{f.actorRole === "unknown" ? "" : ROLE_LABELS[f.actorRole]}</div>
-                </td>
-                <td>
-                  <Badge tone={TONE[f.kind] ?? "neutral"}>{KIND_LABELS[f.kind as FactKind] ?? f.kind}</Badge>
-                  {f.retracted ? (
-                    <Badge tone="neutral" className="ml-1">
-                      retracted
-                    </Badge>
-                  ) : null}
-                </td>
-                <td className="whitespace-nowrap">
-                  {f.target.startsWith("/") ? <span className="font-mono text-[12px] text-muted">{f.target}</span> : <RefLink refId={f.target} />}
-                </td>
-                <td className="max-w-2xl">
-                  <span className="line-clamp-2">{summaryOf(f)}</span>
-                </td>
-              </tr>
+            {withDays.map((g) => (
+              <Fragment key={g.day}>
+                <tr>
+                  <td colSpan={5} className="bg-surface-2/50 py-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+                    {g.day}
+                  </td>
+                </tr>
+                {g.items.map((f) => {
+                  const tl = targetLabel(f.target);
+                  return (
+                    <tr key={f.id} className={cn(f.retracted && "opacity-60")}>
+                      <td className="whitespace-nowrap font-mono text-[11px] tabular-nums text-muted">{fmtTime.format(new Date(f.at))}</td>
+                      <td className="whitespace-nowrap">
+                        <span className="flex items-center gap-2">
+                          <span className={cn("flex h-6 w-6 items-center justify-center rounded-md text-[9.5px] font-semibold", f.actorRole === "client" ? "bg-ok-soft text-ok" : "bg-accent-soft text-accent")}>{initials(f.actorName)}</span>
+                          <span className="leading-tight">
+                            <span className="block font-medium">{f.actorName}</span>
+                            <span className="block text-[10.5px] text-muted">{f.actorRole === "unknown" ? "" : ROLE_LABELS[f.actorRole]}</span>
+                          </span>
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap">
+                        <Badge tone={TONE[f.kind] ?? "neutral"} dot>
+                          {KIND_LABELS[f.kind as FactKind] ?? f.kind}
+                        </Badge>
+                        {f.retracted ? (
+                          <Badge tone="neutral" className="ml-1">
+                            retracted
+                          </Badge>
+                        ) : null}
+                      </td>
+                      <td className="whitespace-nowrap">{tl ? <span className="text-[12.5px]">{tl.label}</span> : <RefLink refId={f.target} />}</td>
+                      <td className="max-w-2xl">
+                        <span className={cn("line-clamp-2 text-[12.5px] leading-5", f.retracted && "line-through")}>{factSummary(f)}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </Fragment>
             ))}
             {shown.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-muted">
+                <td colSpan={5} className="py-10 text-center text-muted">
                   Nothing recorded yet.
                 </td>
               </tr>

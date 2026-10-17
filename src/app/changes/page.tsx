@@ -3,9 +3,10 @@ import Link from "next/link";
 import { MarkSeenButton } from "@/components/changes/mark-seen";
 import { PageHeader } from "@/components/page-header";
 import { RefLink } from "@/components/ref-link";
-import { Badge, Card, Empty } from "@/components/ui";
+import { Badge, Card, cn, Empty } from "@/components/ui";
 import { factsSince, lastSeenSeq } from "@/lib/effective";
 import { getLedger } from "@/lib/facts/repo";
+import { factSummary, targetLabel } from "@/lib/facts/summary";
 import { KIND_LABELS, type FactKind, type FactView } from "@/lib/facts/types";
 import { fmtDate } from "@/lib/format";
 import { describeRef } from "@/lib/packet/describe";
@@ -16,28 +17,12 @@ export const metadata: Metadata = { title: "Since you last looked" };
 
 const fmtWhen = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "UTC" });
 
-function summaryOf(f: FactView): string {
-  const b = f.body;
-  switch (f.kind) {
-    case "verification":
-      return "verified · " + String(b.type ?? "").replace(/_/g, " ");
-    case "note":
-      return (b.blocking ? "blocking note: " : "note: ") + String(b.text ?? "");
-    case "question":
-      return "asked " + (b.to === "client" ? "the client" : String(b.to)) + ": " + String(b.text ?? "");
-    case "answer":
-      return "answered: " + String(b.text ?? "");
-    case "attachment":
-      return "attached " + String(b.name ?? "a file");
-    case "adjustment":
-      return "adjusted " + String(b.engineValue) + " → " + String(b.newValue) + ": " + String(b.reason ?? "");
-    case "retract":
-      return "retracted an earlier record";
-    case "resolve":
-      return "resolved a note";
-    default:
-      return KIND_LABELS[f.kind as FactKind] ?? f.kind;
-  }
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
 export default async function ChangesPage() {
@@ -54,6 +39,7 @@ export default async function ChangesPage() {
   return (
     <>
       <PageHeader
+        eyebrow="People"
         title="Since you last looked"
         description={
           seenAt
@@ -61,9 +47,12 @@ export default async function ChangesPage() {
             : "You have not caught up before, so this is everything other people have recorded on this engagement."
         }
         meta={
-          <Badge tone={fresh.length ? "accent" : "ok"} dot>
-            {fresh.length} new record{fresh.length === 1 ? "" : "s"} by others
-          </Badge>
+          <>
+            <Badge tone={fresh.length ? "accent" : "ok"} dot>
+              {fresh.length} new record{fresh.length === 1 ? "" : "s"} by others
+            </Badge>
+            <Badge tone="neutral">{groups.size} item{groups.size === 1 ? "" : "s"} touched</Badge>
+          </>
         }
         actions={<MarkSeenButton disabled={fresh.length === 0} />}
       />
@@ -76,30 +65,32 @@ export default async function ChangesPage() {
           ) : null}
           {[...groups.entries()].map(([target, facts]) => {
             const d = describeRef(target, packet, index);
+            const tl = d.label === target ? targetLabel(target) : null;
             return (
               <Card
                 key={target}
                 title={
-                  <span className="flex flex-wrap items-baseline gap-2">
-                    <RefLink refId={target} />
-                    <span>{d.label}</span>
+                  <span className="flex flex-wrap items-center gap-2">
+                    {tl ? <span>{tl.label}</span> : <><RefLink refId={target} /><span>{d.label}</span></>}
+                    <Badge tone="accent">{facts.length}</Badge>
                   </span>
                 }
-                description={d.detail}
+                description={tl ? undefined : d.detail}
                 flush
               >
                 <ul className="divide-y divide-border">
                   {facts.map((f) => (
-                    <li key={f.id} className="flex gap-3 px-4 py-2.5 text-[13px]">
-                      <span className="w-28 shrink-0 font-mono text-[11px] text-muted">{fmtWhen.format(new Date(f.at))}</span>
-                      <span className="min-w-0">
-                        <span className="font-medium">{f.actorName}</span> <span className="text-muted">{summaryOf(f)}</span>
-                        {f.retracted ? (
-                          <Badge tone="neutral" className="ml-1.5">
-                            retracted
-                          </Badge>
-                        ) : null}
+                    <li key={f.id} className={cn("flex items-start gap-3 px-5 py-2.5 text-[13px]", f.retracted && "opacity-60")}>
+                      <span className={cn("mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[9.5px] font-semibold", f.actorRole === "client" ? "bg-ok-soft text-ok" : "bg-accent-soft text-accent")}>{initials(f.actorName)}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="font-medium">{f.actorName}</span>
+                          <Badge tone="neutral">{KIND_LABELS[f.kind as FactKind] ?? f.kind}</Badge>
+                          {f.retracted ? <Badge tone="warn">retracted</Badge> : null}
+                        </span>
+                        <span className="mt-0.5 block text-[12.5px] leading-5 text-muted">{factSummary(f)}</span>
                       </span>
+                      <span className="shrink-0 font-mono text-[11px] text-muted">{fmtWhen.format(new Date(f.at))}</span>
                     </li>
                   ))}
                 </ul>

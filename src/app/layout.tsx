@@ -1,6 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import type { Metadata } from "next";
-import Script from "next/script";
+import { cookies } from "next/headers";
 import type { ReactNode } from "react";
 import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
@@ -20,13 +20,13 @@ export const metadata: Metadata = {
   description: "Evidence, calculation and review record for one household's tax return.",
 };
 
-// Applies the saved theme before first paint. Kept tiny and dependency-free on purpose.
-const themeScript = `(function(){try{var t=localStorage.getItem("wp-theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t)}}catch(e){}})();`;
-
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const { packet, index } = getPacket();
   const actor = await getCurrentActor();
-  const [reveal, { ledger, error: ledgerError }] = await Promise.all([getReveal(actor), getLedger()]);
+  const [reveal, { ledger, error: ledgerError }, jar] = await Promise.all([getReveal(actor), getLedger(), cookies()]);
+  // The theme choice lives in a cookie so the server renders it: no inline script, no flash.
+  const themeCookie = jar.get("wp-theme")?.value;
+  const theme = themeCookie === "light" || themeCookie === "dark" ? themeCookie : undefined;
   const actors = listActors();
   const latest = index.versions.get(index.latestVersion)!;
   const nextDeadline = [...packet.firm.deadlines]
@@ -38,11 +38,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const unseen = factsSince(ledger, lastSeenSeq(ledger, actor.id), actor.id).length;
 
   return (
-    <html lang="en" className="h-full" suppressHydrationWarning>
+    <html lang="en" className="h-full" data-theme={theme} suppressHydrationWarning>
       <body className="min-h-full">
-        <Script id="wp-theme" strategy="beforeInteractive">
-          {themeScript}
-        </Script>
         <div className="flex min-h-screen">
           <Sidebar
             firm={packet.firm.name}

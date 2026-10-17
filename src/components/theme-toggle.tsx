@@ -29,8 +29,8 @@ function getServerSnapshot(): Theme {
 }
 
 /**
- * Light/dark switch. The choice is kept per browser; a tiny inline script in
- * the layout applies it before paint so there is no flash.
+ * Light/dark switch. The choice is kept in a cookie so the server renders the
+ * attribute on the next request; the attribute is also set at once for this page.
  */
 export function ThemeToggle() {
   const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
@@ -42,9 +42,7 @@ export function ThemeToggle() {
       title={"Switch to " + next + " theme"}
       onClick={() => {
         document.documentElement.setAttribute("data-theme", next);
-        try {
-          localStorage.setItem("wp-theme", next);
-        } catch {}
+        document.cookie = "wp-theme=" + next + "; path=/; max-age=31536000; samesite=lax";
       }}
       className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface text-muted hover:text-foreground"
     >

@@ -46,6 +46,7 @@ The ledger schema is already applied to the Neon database (`drizzle/0000_fancy_r
 ## Submission documents
 
 - `docs/one-pager.md` – core idea and data model (also the live doc linked there)
+- `docs/approach-and-decisions.md` – how the work was approached, the thirteen key decisions with the alternatives weighed and what each costs, what is simulated, known limits
 - `docs/errors-found.md` – the twelve errors the checks found in the packet, with evidence and tax effect
 - `docs/video-script.md` – walkthrough script by role
 

@@ -2,7 +2,7 @@
 
 Rohit Lahori · October 2026 · code: https://github.com/Rohit-Lahori02/Tax-Workpaper
 
-The companion documents are the one-pager (core idea and data model), the list of errors the checks found, and the video script. This one explains how the work was approached and why the main decisions went the way they did, including the ones that cost something.
+The companion documents are the one-pager (core idea and data model) and the list of errors the checks found. This one explains how the work was approached and why the main decisions went the way they did, including the ones that cost something.
 
 ## How I read the brief
 
@@ -25,7 +25,7 @@ The work went in ten phases, each committed and runnable on its own, in an order
 | 6 | Sign-offs with scope hashes, filing gates, assignments, my work, live updates | People and responsibility. |
 | 7 | Timeline replay, extension and e-file lifecycle with a simulated agency, amend on top, notice packages, carry-forward | The life of the return after it is prepared. |
 | 8 | Firm standards as data, time against budget, status dashboard, full-text search | The firm's view. |
-| 9 | Error report, one-pager, video script | The write-up, once the facts were settled. |
+| 9 | Error report and one-pager | The write-up, once the facts were settled. |
 
 After the phases came a design refresh across the whole app, then focused passes on every page, then cross-cutting work: phone and tablet layouts, loading and error boundaries, keyboard focus and reduced motion, print output, and one vocabulary for every form.
 

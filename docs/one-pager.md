@@ -1,6 +1,6 @@
 # Tax Workpaper: Core Idea and Data Model
 
-Rohit Lahori · October 2026 · live doc: https://claude.ai/code/artifact/c80b3ec3-293d-4e77-814a-cf08a7f41e82 · code: https://github.com/Rohit-Lahori02/Tax-Workpaper
+Rohit Lahori · October 2026 · code: https://github.com/Rohit-Lahori02/Tax-Workpaper
 
 ## Core idea
 

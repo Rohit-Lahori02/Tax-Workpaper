@@ -17,6 +17,7 @@ import { canVerify } from "@/lib/permissions";
 import { lineHref } from "@/lib/refs";
 import { getEffectivePacket } from "@/lib/standards-server";
 import { variance } from "@/lib/variance";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 type Props = { params: Promise<{ form: string }>; searchParams: Promise<{ v?: string }> };
 
@@ -26,6 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function FormPage({ params, searchParams }: Props) {
+  await staffOnlyPage();
   const { form: rawForm } = await params;
   const { v } = await searchParams;
   const form = decodeURIComponent(rawForm);

@@ -11,6 +11,7 @@ import { hrefFor } from "@/lib/refs";
 import { getReviewContext } from "@/lib/review";
 import { asOf, seasonEvents, type SeasonEventKind } from "@/lib/season";
 import { getCurrentActor, getNow } from "@/lib/session";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "Timeline" };
 
@@ -38,6 +39,7 @@ const dayFmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric"
 const timeFmt = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: "UTC" });
 
 export default async function TimelinePage() {
+  await staffOnlyPage();
   const actor = await getCurrentActor();
   const ctx = await getReviewContext();
   const now = await getNow();

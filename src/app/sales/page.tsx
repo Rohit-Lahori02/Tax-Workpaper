@@ -10,10 +10,12 @@ import { fmtLineValue, fmtMoney, fmtNumber } from "@/lib/format";
 import { getPacket } from "@/lib/packet/load";
 import { boxSummaries, lotRows } from "@/lib/packet/sales";
 import { lineHref } from "@/lib/refs";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "Sales detail" };
 
 export default async function SalesPage() {
+  await staffOnlyPage();
   const { packet, index } = getPacket();
   const { ledger } = await getLedger();
   const version = index.latestVersion;

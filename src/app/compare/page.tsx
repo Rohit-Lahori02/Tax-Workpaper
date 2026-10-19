@@ -10,12 +10,14 @@ import { formLabel, formShort, sortForms } from "@/lib/forms";
 import { fmtBalance, fmtDate, fmtLineValue, fmtMoney } from "@/lib/format";
 import { getPacket } from "@/lib/packet/load";
 import { lineHref } from "@/lib/refs";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "Compare versions" };
 
 type Props = { searchParams: Promise<{ a?: string; b?: string; all?: string }> };
 
 export default async function ComparePage({ searchParams }: Props) {
+  await staffOnlyPage();
   const { a: qa, b: qb, all } = await searchParams;
   const { packet, index } = getPacket();
   const { ledger } = await getLedger();

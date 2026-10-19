@@ -122,7 +122,7 @@ export function needsYou(ctx: ReviewContext, actor: Actor, now = new Date()): Ne
       if (mine.state === "reopened" && mine.fact?.actorId === actor.id) {
         out.push({ kind: "reopened", title: "Your " + myLevel + " sign-off on " + scope.label + " reopened", detail: mine.changes.facts + " new record(s); " + mine.changes.lines.length + " line(s) changed since you signed.", href: "/review" });
       } else if (mine.state !== "valid" && (myScopes.has(scope.id) || myLevel === "partner")) {
-        const el = canSignOff(actor, scope, myLevel, levels, forScope, ledger);
+        const el = canSignOff(actor, scope, myLevel, levels, forScope, ledger, ctx.assignments.find((a) => a.scope === scope.id && a.role === "preparer")?.assigneeId ?? null);
         if (el.allowed) out.push({ kind: "signoff", title: "Sign off " + scope.label + " as " + myLevel, detail: "Everything below your level is current.", href: "/review" });
       }
     }

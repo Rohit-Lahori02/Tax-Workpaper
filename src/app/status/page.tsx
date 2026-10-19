@@ -13,6 +13,7 @@ import { getReviewContext, needsYou } from "@/lib/review";
 import { PHASE_LABELS, type FilingPhase } from "@/lib/season";
 import { getCurrentActor, getNow, listActors } from "@/lib/session";
 import { timeByArea, timeEntries } from "@/lib/standards";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "Status" };
 
@@ -28,6 +29,7 @@ function initials(name: string) {
 }
 
 export default async function StatusPage() {
+  await staffOnlyPage();
   const actor = await getCurrentActor();
   if (!canSeeLedger(actor)) notFound();
   const ctx = await getReviewContext();

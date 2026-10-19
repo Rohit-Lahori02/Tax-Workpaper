@@ -8,6 +8,7 @@ import { getLedger } from "@/lib/facts/repo";
 import { fmtDate, fmtMoney, fmtNumber } from "@/lib/format";
 import { getPacket } from "@/lib/packet/load";
 import type { VersionAsset } from "@/lib/packet/schema";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "Depreciation" };
 
@@ -17,6 +18,7 @@ function n(obj: Record<string, unknown> | undefined, key: string): number | null
 }
 
 export default async function AssetsPage() {
+  await staffOnlyPage();
   const { packet, index } = getPacket();
   const { ledger } = await getLedger();
   const version = index.latestVersion;

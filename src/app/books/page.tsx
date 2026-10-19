@@ -9,10 +9,12 @@ import { fmtMoney, fmtNumber } from "@/lib/format";
 import { booksToTax } from "@/lib/packet/books";
 import { getPacket } from "@/lib/packet/load";
 import { documentHref, lineHref } from "@/lib/refs";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "Books to tax" };
 
 export default async function BooksPage() {
+  await staffOnlyPage();
   const { packet, index } = getPacket();
   const { ledger } = await getLedger();
   const version = index.latestVersion;

@@ -19,6 +19,7 @@ import type { ExtractedValue } from "@/lib/packet/schema";
 import { documentHref, lineHref } from "@/lib/refs";
 import { logSensitiveView } from "@/lib/sensitive";
 import { getViewer } from "@/lib/session";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -74,6 +75,7 @@ function excerpt(text: string, start: number, end: number, radius = 160): { befo
 }
 
 export default async function ValuePage({ params }: Props) {
+  await staffOnlyPage();
   const { id } = await params;
   const { index } = getPacket();
   const value = index.values.get(id);

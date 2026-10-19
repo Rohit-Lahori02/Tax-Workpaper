@@ -40,7 +40,7 @@ export async function signoffAction(fd: FormData): Promise<ActionResult> {
     const level = str(fd, "level");
     if (!scope || !ctx.levels.includes(level)) return bad("Unknown scope or level.");
     const statuses = ctx.statuses.filter((s) => s.scope.id === scope.id);
-    const el = canSignOff(actor, scope, level, ctx.levels, statuses, ctx.ledger);
+    const el = canSignOff(actor, scope, level, ctx.levels, statuses, ctx.ledger, ctx.assignments.find((a) => a.scope === scope.id && a.role === "preparer")?.assigneeId ?? null);
     if (!el.allowed) return bad(el.reason ?? "Not allowed.");
     const snap = ctx.snapshots.get(scope.id)!;
     const body = SignoffBody.parse({

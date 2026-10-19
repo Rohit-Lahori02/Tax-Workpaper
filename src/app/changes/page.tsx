@@ -12,6 +12,7 @@ import { fmtDate } from "@/lib/format";
 import { describeRef } from "@/lib/packet/describe";
 import { getPacket } from "@/lib/packet/load";
 import { getCurrentActor } from "@/lib/session";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "Since you last looked" };
 
@@ -26,6 +27,7 @@ function initials(name: string) {
 }
 
 export default async function ChangesPage() {
+  await staffOnlyPage();
   const { packet, index } = getPacket();
   const actor = await getCurrentActor();
   const { ledger } = await getLedger();

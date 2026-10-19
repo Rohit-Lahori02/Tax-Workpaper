@@ -21,6 +21,7 @@ import { getPacket } from "@/lib/packet/load";
 import { canAdjust, canCorrectIdentity } from "@/lib/permissions";
 import { lineHref, parseRef, type RefKind } from "@/lib/refs";
 import { getViewer } from "@/lib/session";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -52,6 +53,7 @@ const SEVERITY_MEANING: Record<Severity, string> = {
 const num = (s: string | undefined) => (s !== undefined && /^-?[\d,]+(\.\d+)?$/.test(s) ? Number(s.replace(/,/g, "")) : null);
 
 export default async function FindingPage({ params }: Props) {
+  await staffOnlyPage();
   const { id: raw } = await params;
   const id = decodeURIComponent(raw);
   const { packet, index } = getPacket();

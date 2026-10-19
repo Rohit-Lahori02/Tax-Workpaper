@@ -10,10 +10,12 @@ import { canSeeLedger } from "@/lib/permissions";
 import { documentHref } from "@/lib/refs";
 import { getReviewContext } from "@/lib/review";
 import { getCurrentActor, getNow } from "@/lib/session";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "Notices" };
 
 export default async function NoticesPage() {
+  await staffOnlyPage();
   const actor = await getCurrentActor();
   if (!canSeeLedger(actor)) notFound();
   const ctx = await getReviewContext();

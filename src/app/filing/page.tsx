@@ -13,6 +13,7 @@ import { documentHref, lineHref } from "@/lib/refs";
 import { getReviewContext } from "@/lib/review";
 import { FILED_LINE_KEYS, FILED_LINE_LABELS, JURISDICTION_LABELS, JURISDICTIONS, latePaymentEstimate, PHASE_LABELS, type FilingPhase, type Transmission, type TransmissionStatus } from "@/lib/season";
 import { getCurrentActor, getNow } from "@/lib/session";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "Filing" };
 
@@ -20,6 +21,7 @@ const STATUS_TONE: Record<TransmissionStatus, Tone> = { transmitted: "accent", a
 const PHASE_TONE: Record<FilingPhase, Tone> = { preparing: "neutral", transmitted: "accent", rejected: "danger", filed: "ok", amending: "warn", amended: "ok" };
 
 export default async function FilingPage() {
+  await staffOnlyPage();
   const actor = await getCurrentActor();
   const ctx = await getReviewContext();
   const now = await getNow();

@@ -11,10 +11,12 @@ import { getPacket } from "@/lib/packet/load";
 import { canEditStandards, canSeeLedger } from "@/lib/permissions";
 import { getCurrentActor } from "@/lib/session";
 import { formatStandardValue, standardsView } from "@/lib/standards";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "Firm standards" };
 
 export default async function StandardsPage() {
+  await staffOnlyPage();
   const actor = await getCurrentActor();
   if (!canSeeLedger(actor)) notFound();
   const { packet } = getPacket();

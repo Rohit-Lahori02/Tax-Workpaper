@@ -128,7 +128,7 @@ export function preparersOf(scope: Scope, ledger: Ledger): Set<string> {
 }
 
 const LEVEL_ROLES: Record<string, string[]> = {
-  preparer: ["preparer", "reviewer", "partner", "quality_reviewer"],
+  preparer: ["preparer"],
   reviewer: ["reviewer", "partner", "quality_reviewer"],
   partner: ["partner"],
 };
@@ -138,11 +138,19 @@ export interface SignoffEligibility {
   reason: string | null;
 }
 
-/** Role gate, sequence gate (each level needs the one below valid) and the no-self-review rule. */
-export function canSignOff(actor: Actor, scope: Scope, level: string, levels: string[], statuses: SignoffStatus[], ledger: Ledger): SignoffEligibility {
+/**
+ * Role gate, sequence gate (each level needs the one below valid) and the
+ * no-self-review rule. The preparer level is for the preparer role, or for
+ * whoever is assigned as preparer of the scope; a reviewer or partner does
+ * not sign as preparer and then find themselves unable to review.
+ */
+export function canSignOff(actor: Actor, scope: Scope, level: string, levels: string[], statuses: SignoffStatus[], ledger: Ledger, assignedPreparerId?: string | null): SignoffEligibility {
   if (actor.kind !== "staff") return { allowed: false, reason: "Only firm staff sign off." };
   const roles = LEVEL_ROLES[level] ?? [level];
-  if (!roles.includes(actor.role)) return { allowed: false, reason: "Your role cannot sign at the " + level + " level." };
+  const assignedHere = level === "preparer" && Boolean(assignedPreparerId) && actor.id === assignedPreparerId;
+  if (!roles.includes(actor.role) && !assignedHere) {
+    return { allowed: false, reason: level === "preparer" ? "The preparer sign-off is given by the preparer assigned to this scope." : "Your role cannot sign at the " + level + " level." };
+  }
   const i = levels.indexOf(level);
   if (i > 0) {
     const below = statuses.find((s) => s.level === levels[i - 1]);

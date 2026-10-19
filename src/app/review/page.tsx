@@ -12,10 +12,12 @@ import { canApproveAdjustment } from "@/lib/permissions";
 import { getReviewContext } from "@/lib/review";
 import { getCurrentActor } from "@/lib/session";
 import { canSignOff } from "@/lib/signoff";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "Sign-offs" };
 
 export default async function ReviewPage() {
+  await staffOnlyPage();
   const actor = await getCurrentActor();
   const ctx = await getReviewContext();
   const { scopes, levels, statuses, approvals, ledger } = ctx;
@@ -24,7 +26,7 @@ export default async function ReviewPage() {
     const forScope = statuses.filter((s) => s.scope.id === scope.id);
     for (const level of levels) {
       const st = forScope.find((s) => s.level === level)!;
-      const el = canSignOff(actor, scope, level, levels, forScope, ledger);
+      const el = canSignOff(actor, scope, level, levels, forScope, ledger, ctx.assignments.find((a) => a.scope === scope.id && a.role === "preparer")?.assigneeId ?? null);
       cells[scope.id + "|" + level] = {
         scope: scope.id,
         level,

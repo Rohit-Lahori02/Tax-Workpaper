@@ -11,12 +11,14 @@ import { resolvedFindingIds } from "@/lib/completeness";
 import { getLedger } from "@/lib/facts/repo";
 import { fmtMoney } from "@/lib/format";
 import { getEffectivePacket } from "@/lib/standards-server";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "Checks" };
 
 type Props = { searchParams: Promise<{ severity?: string; area?: string; open?: string }> };
 
 export default async function ChecksPage({ searchParams }: Props) {
+  await staffOnlyPage();
   const { severity, area, open } = await searchParams;
   const { packet, index } = await getEffectivePacket();
   const { ledger } = await getLedger();

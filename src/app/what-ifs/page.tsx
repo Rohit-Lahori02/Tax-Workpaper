@@ -12,6 +12,7 @@ import { fmtBalance, fmtDate, fmtLineValue, fmtMoney } from "@/lib/format";
 import { getPacket } from "@/lib/packet/load";
 import { canAdjust } from "@/lib/permissions";
 import { lineHref } from "@/lib/refs";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "What-ifs" };
 
@@ -60,6 +61,7 @@ function Jurisdiction({ label, base, alt, taxChange, penaltyChange }: { label: s
 }
 
 export default async function WhatIfsPage() {
+  await staffOnlyPage();
   const { packet, index } = getPacket();
   const [{ ledger }, ctx] = await Promise.all([getLedger(), factsContext()]);
   const adjustments = activeAdjustments(ledger);

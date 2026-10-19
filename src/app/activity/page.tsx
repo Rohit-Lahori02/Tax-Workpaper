@@ -6,10 +6,12 @@ import { Badge, Card, Stat } from "@/components/ui";
 import { getLedger } from "@/lib/facts/repo";
 import { canSeeLedger } from "@/lib/permissions";
 import { getCurrentActor } from "@/lib/session";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "Activity" };
 
 export default async function ActivityPage() {
+  await staffOnlyPage();
   const actor = await getCurrentActor();
   if (!canSeeLedger(actor)) notFound();
   const { ledger } = await getLedger();

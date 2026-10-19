@@ -44,20 +44,23 @@ export interface SidebarClient {
   warnings: number;
 }
 
-type Item = { href: string; label: string; icon: typeof Files; exact?: boolean; ledger?: boolean; badge?: "questions" | "checks" | "unseen" | "work" };
+type Item = { href: string; label: string; icon: typeof Files; exact?: boolean; ledger?: boolean; staffOnly?: boolean; badge?: "questions" | "checks" | "unseen" | "work" };
+
+/** What a client may open. Everything else is the firm's working paper. */
+const visibleTo = (staff: boolean) => (i: Item) => staff || (!i.ledger && !i.staffOnly);
 
 const SECTIONS: { label: string | null; items: Item[] }[] = [
   {
     label: null,
     items: [
-      { href: "/", label: "Overview", icon: LayoutDashboard, exact: true },
+      { href: "/", label: "Overview", icon: LayoutDashboard, exact: true, staffOnly: true },
       { href: "/work", label: "My work", icon: Inbox, badge: "work" },
     ],
   },
   {
     label: "Review",
     items: [
-      { href: "/return", label: "Return", icon: FileSpreadsheet },
+      { href: "/return", label: "Return", icon: FileSpreadsheet, staffOnly: true },
       { href: "/documents", label: "Documents", icon: Files },
       { href: "/checks", label: "Checks", icon: ListChecks, badge: "checks", ledger: true },
       { href: "/compare", label: "Compare", icon: GitCompare, ledger: true },
@@ -75,16 +78,16 @@ const SECTIONS: { label: string | null; items: Item[] }[] = [
       { href: "/client-copy", label: "Client copy", icon: Printer },
       { href: "/notices", label: "Notices", icon: Mail, ledger: true },
       { href: "/next-year", label: "Next year", icon: CalendarRange, ledger: true },
-      { href: "/timeline", label: "Timeline", icon: Clock },
+      { href: "/timeline", label: "Timeline", icon: Clock, staffOnly: true },
     ],
   },
   {
     label: "Workpapers",
     items: [
-      { href: "/sales", label: "Sales detail", icon: TrendingUp },
-      { href: "/assets", label: "Depreciation", icon: Building2 },
-      { href: "/books", label: "Books to tax", icon: BookOpen },
-      { href: "/state", label: "California split", icon: Map },
+      { href: "/sales", label: "Sales detail", icon: TrendingUp, staffOnly: true },
+      { href: "/assets", label: "Depreciation", icon: Building2, staffOnly: true },
+      { href: "/books", label: "Books to tax", icon: BookOpen, staffOnly: true },
+      { href: "/state", label: "California split", icon: Map, staffOnly: true },
     ],
   },
   {
@@ -92,14 +95,14 @@ const SECTIONS: { label: string | null; items: Item[] }[] = [
     items: [
       { href: "/status", label: "Status", icon: Activity, ledger: true },
       { href: "/standards", label: "Standards", icon: Settings2, ledger: true },
-      { href: "/search", label: "Search", icon: Search },
+      { href: "/search", label: "Search", icon: Search, staffOnly: true },
     ],
   },
   {
     label: "People",
     items: [
       { href: "/questions", label: "Questions", icon: MessageCircleQuestion, badge: "questions" },
-      { href: "/changes", label: "Since I looked", icon: Bell, badge: "unseen" },
+      { href: "/changes", label: "Since I looked", icon: Bell, badge: "unseen", staffOnly: true },
       { href: "/activity", label: "Activity", icon: History, ledger: true },
     ],
   },
@@ -148,7 +151,7 @@ export function Sidebar({
 
       <nav className="scroll-thin flex flex-1 flex-col gap-4 overflow-auto px-3 py-3">
         {SECTIONS.map((section) => {
-          const items = section.items.filter((i) => showLedger || !i.ledger);
+          const items = section.items.filter(visibleTo(showLedger));
           if (!items.length) return null;
           return (
             <div key={section.label ?? "top"}>
@@ -212,9 +215,9 @@ export function Sidebar({
   );
 }
 
-export function MobileNav() {
+export function MobileNav({ showLedger }: { showLedger: boolean }) {
   const pathname = usePathname();
-  const items = SECTIONS.flatMap((s) => s.items).filter((i) => !i.ledger);
+  const items = SECTIONS.flatMap((s) => s.items).filter(visibleTo(showLedger));
   return (
     <nav className="flex items-center gap-1 overflow-auto lg:hidden">
       {items.map((item) => (

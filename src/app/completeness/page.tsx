@@ -18,6 +18,7 @@ import { fmtDate } from "@/lib/format";
 import { canNote, canVerify } from "@/lib/permissions";
 import { documentHref } from "@/lib/refs";
 import { getEffectivePacket } from "@/lib/standards-server";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "Completeness" };
 
@@ -49,6 +50,7 @@ function StepIcon({ auto, done }: { auto: string | null; done: boolean }) {
 }
 
 export default async function CompletenessPage() {
+  await staffOnlyPage();
   const { packet, index } = await getEffectivePacket();
   const [{ ledger }, ctx] = await Promise.all([getLedger(), factsContext()]);
   const checks = runChecks(packet, index);

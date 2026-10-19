@@ -9,6 +9,7 @@ import { parseRef } from "@/lib/refs";
 import { getReviewContext } from "@/lib/review";
 import { GROUP_LABELS, search, type SearchGroup, type SearchHit } from "@/lib/search";
 import { getViewer } from "@/lib/session";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "Search" };
 
@@ -93,6 +94,7 @@ function Hit({ h, terms }: { h: SearchHit; terms: string[] }) {
 }
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string; in?: string }> }) {
+  await staffOnlyPage();
   const { q = "", in: inParam } = await searchParams;
   const { actor, literals } = await getViewer();
   const ctx = await getReviewContext();

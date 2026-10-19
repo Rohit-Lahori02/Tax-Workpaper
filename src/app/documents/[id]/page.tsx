@@ -98,13 +98,19 @@ export default async function DocumentPage({ params, searchParams }: Props) {
         .map((l) => ({ key: l.key, label: lineMap.get(l.key)?.label ?? "" })),
     }));
 
+  // A client sees the conversation with them and what they attached; the firm's own notes stay internal.
+  const CLIENT_VISIBLE = new Set(["question", "answer", "attachment"]);
+  const visible = (fs: FactView[]) => (actor.kind === "staff" ? fs : fs.filter((f) => CLIENT_VISIBLE.has(f.kind)));
   const facts: Record<string, FactView[]> = {};
   const summaries: Record<string, TargetSummary> = {};
   for (const v of values) {
     const s = ledger.summary(v.id);
-    if (s.total) {
+    if (s.total && actor.kind === "staff") {
       summaries[v.id] = s;
       facts[v.id] = ledger.forTarget(v.id);
+    } else if (s.total) {
+      const fs = visible(ledger.forTarget(v.id));
+      if (fs.length) facts[v.id] = fs;
     }
   }
 
@@ -192,7 +198,7 @@ export default async function DocumentPage({ params, searchParams }: Props) {
         <div className="xl:col-span-2">
           <FactsPanel
             target={doc.id}
-            facts={ledger.forTarget(doc.id)}
+            facts={visible(ledger.forTarget(doc.id))}
             actor={ctx.actor}
             staff={ctx.staff}
             verificationTypes={ctx.verificationTypes}

@@ -16,6 +16,7 @@ import { documentHref, lineHref } from "@/lib/refs";
 import { getReviewContext } from "@/lib/review";
 import { getCurrentActor, getNow } from "@/lib/session";
 import { sha256 } from "@/lib/signoff";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -23,6 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 export default async function NoticePage({ params }: { params: Promise<{ id: string }> }) {
+  await staffOnlyPage();
   const { id } = await params;
   const actor = await getCurrentActor();
   if (!canSeeLedger(actor)) notFound();

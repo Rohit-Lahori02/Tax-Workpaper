@@ -15,6 +15,7 @@ import { fmtLineValue, fmtMoney, fmtPct } from "@/lib/format";
 import { getEffectivePacket } from "@/lib/standards-server";
 import { canVerify } from "@/lib/permissions";
 import { lineHref } from "@/lib/refs";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "Judgment" };
 
@@ -34,6 +35,7 @@ export function recorded(f: FactView | null): RecordedJudgment | null {
 const signed = (n: number | null) => (n === null ? "—" : n === 0 ? "no change" : (n > 0 ? "+" : "−") + fmtMoney(Math.abs(n)));
 
 export default async function JudgmentPage() {
+  await staffOnlyPage();
   const { packet, index } = await getEffectivePacket();
   const [{ ledger }, ctx] = await Promise.all([getLedger(), factsContext()]);
   const allowed = canVerify(ctx.actor);

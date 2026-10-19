@@ -12,10 +12,12 @@ import { hrefFor, lineHref } from "@/lib/refs";
 import { getReviewContext } from "@/lib/review";
 import { basisGaps, carryforwardRows, estimatePlan, PHASE_LABELS } from "@/lib/season";
 import { getCurrentActor } from "@/lib/session";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "Next year" };
 
 export default async function NextYearPage() {
+  await staffOnlyPage();
   const actor = await getCurrentActor();
   if (!canSeeLedger(actor)) notFound();
   const ctx = await getReviewContext();

@@ -21,6 +21,7 @@ import { canAdjust } from "@/lib/permissions";
 import { documentHref, lineHref, parseRef } from "@/lib/refs";
 import { getEffectivePacket } from "@/lib/standards-server";
 import { variance } from "@/lib/variance";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 type Props = { params: Promise<{ key: string }>; searchParams: Promise<{ v?: string; adjust?: string; reason?: string; from?: string }> };
 
@@ -30,6 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function LinePage({ params, searchParams }: Props) {
+  await staffOnlyPage();
   const { key: rawKey } = await params;
   const { v, adjust, reason, from } = await searchParams;
   const key = decodeURIComponent(rawKey);

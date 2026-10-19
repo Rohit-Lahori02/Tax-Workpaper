@@ -18,6 +18,7 @@ import { resolveRef } from "@/lib/packet/resolve";
 import { hrefFor, lineHref, parseRef, type RefKind } from "@/lib/refs";
 import { logSensitiveView } from "@/lib/sensitive";
 import { getViewer } from "@/lib/session";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 type Params = Promise<{ ref: string }>;
 
@@ -169,6 +170,7 @@ function PointerTrail({ prefix, pointer }: { prefix: string; pointer: string }) 
 
 /** Fallback record view for reference kinds that do not have a dedicated screen. */
 export default async function RecordPage({ params }: { params: Params }) {
+  await staffOnlyPage();
   const { ref: raw } = await params;
   const refStr = decode(raw);
   if (!refStr) notFound();

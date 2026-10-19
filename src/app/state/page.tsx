@@ -11,6 +11,7 @@ import { fmtDate, fmtLineValue, fmtMoney, fmtPct } from "@/lib/format";
 import { getPacket } from "@/lib/packet/load";
 import type { ReturnLine } from "@/lib/packet/schema";
 import { lineHref } from "@/lib/refs";
+import { staffOnlyPage } from "@/lib/page-guards";
 
 export const metadata: Metadata = { title: "California split" };
 
@@ -24,6 +25,7 @@ const COL_LABELS: Record<(typeof COLS)[number], string> = {
 };
 
 export default async function StatePage() {
+  await staffOnlyPage();
   const { packet, index } = getPacket();
   const { ledger } = await getLedger();
   const version = index.latestVersion;

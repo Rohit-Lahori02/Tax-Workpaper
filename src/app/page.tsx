@@ -18,6 +18,7 @@ import { getReviewContext, needsYou } from "@/lib/review";
 import { PHASE_LABELS, type FilingPhase } from "@/lib/season";
 import { logSensitiveView } from "@/lib/sensitive";
 import { getNow, getViewer } from "@/lib/session";
+import { clientsGoTo } from "@/lib/page-guards";
 
 function delta(current: number, previous: number | undefined, label: string): { text: string; tone: Tone } | undefined {
   if (previous === undefined) return undefined;
@@ -59,6 +60,7 @@ function Meter({ label, value, total, tone, href, hint }: { label: string; value
 }
 
 export default async function OverviewPage() {
+  await clientsGoTo("/work");
   const { packet, index } = getPacket();
   const [{ actor, reveal }, { ledger }, review, now] = await Promise.all([getViewer(), getLedger(), getReviewContext(), getNow()]);
   const gatesOpen = review.gates.filter((g) => g.ok).length;

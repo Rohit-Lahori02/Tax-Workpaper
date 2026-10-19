@@ -62,7 +62,7 @@ export default async function ApprovePage() {
   const steps: { key: string; label: string; detail: string; state: StepState }[] = [
     {
       key: "partner",
-      label: top[0].toUpperCase() + top.slice(1) + " sign-off",
+      label: top[0].toUpperCase() + top.slice(1) + " sign-off on the whole return",
       detail: !topStatus || topStatus.state === "missing" ? "not yet signed" : topStatus.state === "reopened" ? "reopened: the return changed after " + (topName ?? "the signer") + " signed" : "signed by " + topName,
       state: !topStatus || topStatus.state === "missing" ? "todo" : topStatus.state === "reopened" ? "stale" : "done",
     },
@@ -319,7 +319,7 @@ export default async function ApprovePage() {
           >
             <ul className="mb-4 grid gap-1.5 text-[12.5px]">
               {[
-                { ok: partnerOk, label: "Whole return has a current " + top + " sign-off", detail: topStatus ? topStatus.state + (topName ? " · " + topName : "") : "missing", href: "/review" },
+                { ok: partnerOk, label: "Whole return has a current " + top + " sign-off", detail: (topStatus ? topStatus.state + (topName ? " · " + topName : "") : "missing") + (partnerOk ? "" : " · area sign-offs do not count; re-sign the Whole return row, preparer first"), href: "/review" },
                 { ok: !blockingGate || blockingGate.ok, label: "No open blocking review notes", detail: blockingGate?.detail ?? "", href: "/review#blocking" },
                 { ok: openForClient.length === 0, label: "No questions still open with the client", detail: openForClient.length ? openForClient.length + " open; sending is still allowed, but the client will be asked to answer first" : "none open", href: "/questions" },
               ].map((p) => (

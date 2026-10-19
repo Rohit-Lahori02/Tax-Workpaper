@@ -384,6 +384,12 @@ textarea {
   .input::placeholder {
     color: var(--muted);
   }
+  /* Native select popups: Chromium on Windows paints options from these, not from color-scheme. */
+  select.input option,
+  select.input optgroup {
+    background: var(--surface);
+    color: var(--fg);
+  }
   .input:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-soft);

@@ -15,6 +15,7 @@ import { factsContext } from "@/lib/facts/context";
 import { getLedger } from "@/lib/facts/repo";
 import { formLabel, formShort } from "@/lib/forms";
 import { fmtExtractedValue, fmtLineValue, fmtPct } from "@/lib/format";
+import { describeRef } from "@/lib/packet/describe";
 import type { ExtractedValue, PacketDocument } from "@/lib/packet/schema";
 import { canAdjust } from "@/lib/permissions";
 import { documentHref, lineHref, parseRef } from "@/lib/refs";
@@ -224,12 +225,18 @@ export default async function LinePage({ params, searchParams }: Props) {
                 {otherSources.length ? (
                   <div className="px-5 py-3">
                     <SectionTitle>Other sources</SectionTitle>
-                    <ul className="flex flex-wrap gap-1.5">
-                      {otherSources.map((s) => (
-                        <li key={s}>
-                          <RefLink refId={s} />
-                        </li>
-                      ))}
+                    <p className="-mt-1 mb-2 text-[12px] leading-4 text-muted">Inputs that are not a value read from a document: the client&apos;s own answers, prior-year records, assets and engine parameters. They carry no page to check, which is why the checks compare them against agency records.</p>
+                    <ul className="grid gap-1.5">
+                      {otherSources.map((s) => {
+                        const d = describeRef(s, packet, index);
+                        return (
+                          <li key={s} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[12.5px]">
+                            <RefLink refId={s} />
+                            <span className="font-medium">{d.label}</span>
+                            {d.detail ? <span className="text-muted">{d.detail}</span> : null}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 ) : null}
